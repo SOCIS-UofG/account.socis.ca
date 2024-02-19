@@ -39,7 +39,7 @@ export const handler = NextAuth({
         throw new Error("Failed to fetch user");
       }
 
-      const user = await Prisma.getUserByEmail(session.user.email);
+      const user = await Prisma.getUserByEmailNoPassword(session.user.email);
       if (!user) {
         throw new Error("Failed to fetch user");
       }

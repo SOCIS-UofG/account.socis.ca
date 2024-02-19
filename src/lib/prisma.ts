@@ -9,6 +9,7 @@ export class Prisma extends PrismaClient {
 
   /**
    * Get a table
+   *
    * @param table The table to get
    * @returns The table
    */
@@ -19,6 +20,7 @@ export class Prisma extends PrismaClient {
 
   /**
    * Finds many rows in a table
+   *
    * @param table The table to find in
    * @param opts The find options
    * @returns The rows found
@@ -27,12 +29,18 @@ export class Prisma extends PrismaClient {
     table: string,
     opts: any
   ): Promise<T[]> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.findMany(opts);
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.findMany(opts)) as T[];
+    } catch {
+      return [];
+    }
   };
 
   /**
    * Finds a row in a table
+   *
    * @param table The table to find in
    * @param opts The find options
    * @returns The row found, or null if it doesn't exist
@@ -41,12 +49,18 @@ export class Prisma extends PrismaClient {
     table: string,
     opts: any
   ): Promise<T | null> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.findFirst(opts);
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.findFirst(opts)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
    * Creates a row in a table
+   *
    * @param table The table to create in
    * @param opts The creation options
    * @returns The created row
@@ -54,13 +68,19 @@ export class Prisma extends PrismaClient {
   public static readonly create = async <T>(
     table: string,
     opts: any
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.create(opts);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.create(opts)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
    * Updates a row in a table
+   *
    * @param table The table to update
    * @param where The where clause to update
    * @param data The data to update
@@ -69,13 +89,19 @@ export class Prisma extends PrismaClient {
   public static readonly update = async <T>(
     table: string,
     data: any
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.update(data);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.update(data)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
    * Deletes a row from a table
+   *
    * @param table The table to delete from
    * @param opts The delete options
    * @returns The deleted row
@@ -83,23 +109,39 @@ export class Prisma extends PrismaClient {
   public static readonly delete = async <T>(
     table: string,
     opts: any
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.delete(opts);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.delete(opts)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
-   * Get an user by their email
+   * Get an user by their email (without password)
    *
-   * @param email The email to get
+   * @param email The user's email
    * @returns The user
    */
-  public static readonly getUserByEmail = async (
+  public static readonly getUserByEmailNoPassword = async (
     email: string
   ): Promise<User | null> => {
     return await Prisma.findOne("user", {
       where: {
         email,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        permissions: true,
+        roles: true,
+
+        // ignore password
+        password: false,
       },
     });
   };
@@ -107,7 +149,7 @@ export class Prisma extends PrismaClient {
   /**
    * Get an user by their secret
    *
-   * @param secret The secret to get
+   * @param secret The user's secret
    * @returns The user
    */
   public static readonly getUserBySecret = async (
@@ -121,18 +163,18 @@ export class Prisma extends PrismaClient {
   };
 
   /**
-   * Update an user
+   * Update an user by their secret
    *
    * @param userSecret The user's secret
    * @param data The data to update
    */
-  public static readonly updateUser = async (
-    userSecret: string,
+  public static readonly updateUserBySecret = async (
+    secret: string,
     data: User
-  ): Promise<User> => {
+  ): Promise<User | null> => {
     return await Prisma.update("user", {
       where: {
-        secret: userSecret,
+        secret,
       },
       data,
     });

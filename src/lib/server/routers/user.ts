@@ -5,6 +5,9 @@ import { hasPermissions } from "@/lib/utils";
 import { Permission } from "@/types";
 import { type User } from "next-auth";
 
+/**
+ * User router
+ */
 export const userRouter = {
   /**
    * Update an user
@@ -34,10 +37,10 @@ export const userRouter = {
 
       // If the user is an admin, they can update any user
       if (hasPermissions(user, [Permission.ADMIN])) {
-        const res = await Prisma.updateUser(
+        const res = await Prisma.updateUserBySecret(
           user.secret,
           input.user as User
-        ).catch(() => null);
+        );
 
         if (!res) {
           return { success: false, user: null };
@@ -51,10 +54,10 @@ export const userRouter = {
         return { success: false, user: null };
       }
 
-      const res = await Prisma.updateUser(
+      const res = await Prisma.updateUserBySecret(
         user.secret,
         input.user as User
-      ).catch(() => null);
+      );
 
       if (!res) {
         return { success: false, user: null };
