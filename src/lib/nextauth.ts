@@ -35,10 +35,6 @@ export const handler = NextAuth({
 
   callbacks: {
     async session({ session }) {
-      if (!session.user.email) {
-        throw new Error("Failed to fetch user");
-      }
-
       const user = await Prisma.getUserByEmailNoPassword(session.user.email);
       if (!user) {
         throw new Error("Failed to fetch user");
