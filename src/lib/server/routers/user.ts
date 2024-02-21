@@ -22,8 +22,6 @@ export const userRouter = {
         user: z.object({
           secret: z.string(),
           name: z.string(),
-          email: z.string(),
-          image: z.string().optional(),
           permissions: z.array(z.string()).optional(),
           roles: z.array(z.string()).optional(),
         }),

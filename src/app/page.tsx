@@ -11,6 +11,7 @@ import {
   MainWrapper,
   Navbar,
 } from "socis-components";
+import UpdateProfileImage from "@/components/UpdateProfileImage";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -109,6 +110,7 @@ function Components(): JSX.Element {
          */}
         <div className="my-4 flex flex-col items-start justify-start gap-3 w-full">
           <UpdateNameField user={session.user} />
+          <UpdateProfileImage user={{ secret: session.user.secret }} />
         </div>
 
         {/**

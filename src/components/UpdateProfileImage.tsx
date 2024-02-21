@@ -1,55 +1,50 @@
 import { trpc } from "@/lib/trpc/client";
-import { type User } from "next-auth";
-import { useState, type FormEvent } from "react";
+import { useRef, type FormEvent } from "react";
 import {
   Button,
-  ErrorMessage,
   LoadingSpinner,
+  ErrorMessage,
   SuccessMessage,
 } from "socis-components";
 
-interface UpdateNameFieldProps {
+export default function UpdateProfileImage(props: {
   user: {
     secret: string;
-    name: string;
   };
-}
-export default function UpdateNameField(
-  props: UpdateNameFieldProps
-): JSX.Element {
-  /**
-   * Updates the user's name in the database.
-   */
+}) {
   const {
-    mutateAsync: updateUser,
+    mutateAsync: uploadImage,
     status,
     data,
-  } = trpc.updateUser.useMutation();
+  } = trpc.uploadImage.useMutation();
+  const imageRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * State for the user's name.
-   */
-  const [name, setName] = useState(props.user.name);
-
-  /**
-   * Updates the user's name in the database.
-   *
-   * @param e The event that triggered the change
-   */
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    await updateUser({
-      accessToken: props.user.secret,
-      user: {
-        name,
-      } as User,
-    });
-  }
+    const file = imageRef.current?.files?.[0];
+    if (!file) {
+      return;
+    }
 
-  /**
-   * The component's JSX.
-   */
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const image = e.target?.result;
+
+      if (typeof image !== "string") {
+        return;
+      }
+
+      await uploadImage({
+        user: {
+          secret: props.user.secret,
+          image,
+        },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col items-start justify-start w-full h-full gap-2">
       <form
@@ -59,14 +54,10 @@ export default function UpdateNameField(
         <div className="flex flex-col gap-1 w-full">
           <label className="text-white/80 font-light">Update Username</label>
           <input
-            maxLength={50}
-            minLength={1}
-            type="text"
-            name="name"
+            ref={imageRef} // Add ref to input
+            type="file"
             className="rounded-lg border border-primary bg-transparent px-4 py-2 font-thin tracking-wider text-white duration-300 ease-in-out focus:outline-none"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            placeholder="Profile Image"
           />
         </div>
         <Button
