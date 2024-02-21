@@ -12,6 +12,8 @@ import {
   Navbar,
 } from "socis-components";
 import UpdateProfileImage from "@/components/UpdateProfileImage";
+import Image from "next/image";
+import { userConfig } from "@/lib/config";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -79,12 +81,28 @@ function Components(): JSX.Element {
   return (
     <MainWrapper>
       <div className="flex flex-col justify-start items-start border-primary/20 border-2 rounded-lg p-12">
-        <h1 className="text-center text-5xl font-bold text-white">
-          Welcome, {session.user.name.split(" ")[0]}
-        </h1>
-        <p className="text-center mt-1 text-sm font-light text-white/80">
-          {session.user.name} -- {session.user.email}
-        </p>
+        {/**
+         * USER INFO
+         *
+         * The user info section displays the user's name and email.
+         */}
+        <div className="flex flex-row items-center justify-start gap-3 w-full">
+          <Image
+            src={session.user.image || userConfig.default.image}
+            alt="..."
+            width={100}
+            height={100}
+            className="rounded-full"
+          />
+          <div className="flex flex-col items-start justify-start gap-1">
+            <h1 className="text-center text-5xl font-bold text-white">
+              Welcome, {session.user.name.split(" ")[0]}
+            </h1>
+            <p className="text-center text-sm font-light text-white/80">
+              {session.user.name} -- {session.user.email}
+            </p>
+          </div>
+        </div>
 
         {/**
          * Show the users permissions and roles
