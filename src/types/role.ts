@@ -1,29 +1,18 @@
 /**
- * Roles that an user can inherit.
+ * Team member roles
  */
 export enum Role {
-  /**
-   * Every user has this role by default.
-   */
-  MEMBER = "member",
-  /**
-   * The role that an user has when they are the president.
-   */
-  PRESIDENT = "president",
-  /**
-   * The role that an user has when they are the vice president.
-   */
-  VICE_PRESIDENT = "vice_president",
-  /**
-   * The role that an user has when they are the treasurer.
-   */
-  TREASURER = "treasurer",
-  /**
-   * The role that an user has when they are the project manager.
-   */
-  PROJECT_MANAGER = "project_manager",
-  /**
-   * The role that an user has when they are SE&RM approved.
-   */
-  SERM_APPROVED = "serm",
+  MEMBER = "Member",
+  PRESIDENT = "President",
+  VICE_PRESIDENT_INTERNAL = "Vice-President of Internal Affairs",
+  VICE_PRESIDENT_EXTERNAL = "Vice-President of External Affairs",
+  VICE_PRESIDENT_COMM = "Vice-President of Communications",
+  VICE_PRESIDENT_TECH = "Vice-President of Technology",
+  VICE_PRESIDENT_FINANCIAL = "Vice-President of Financial Affairs",
+  VICE_PRESIDENT_SOCIAL = "Vice-President of Social Affairs",
+  EVENTS_TEAM = "Events Team",
+  MARKETING_TEAM = "Marketing Team",
+  TECH_TEAM = "Technology Team",
+  PROJECT_MANAGER = "Project Manager",
+  SERM_APPROVED = "SE&RM Approved",
 }
