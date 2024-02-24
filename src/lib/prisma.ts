@@ -161,6 +161,7 @@ export class Prisma extends PrismaClient {
         image: true,
         permissions: true,
         roles: true,
+        secret: true,
 
         // ignore password
         password: false,
