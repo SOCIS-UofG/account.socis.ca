@@ -120,6 +120,28 @@ export class Prisma extends PrismaClient {
   };
 
   /**
+   * Get all users (without password or secret)
+   *
+   * @returns All users
+   */
+  public static readonly getAllUsersSecure = async (): Promise<User[]> => {
+    return await Prisma.findMany("user", {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        permissions: true,
+        roles: true,
+
+        // ignore password
+        password: false,
+        secret: false,
+      },
+    });
+  };
+
+  /**
    * Get an user by their email (without password)
    *
    * @param email The user's email
@@ -163,18 +185,18 @@ export class Prisma extends PrismaClient {
   };
 
   /**
-   * Update an user by their secret
+   * Update an user by their id
    *
-   * @param userSecret The user's secret
+   * @param id The user's secret
    * @param data The data to update
    */
-  public static readonly updateUserBySecret = async (
-    secret: string,
+  public static readonly updateUserById = async (
+    id: string,
     data: User
   ): Promise<User | null> => {
     return await Prisma.update("user", {
       where: {
-        secret,
+        id,
       },
       data,
     });
