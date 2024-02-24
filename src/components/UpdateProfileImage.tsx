@@ -36,12 +36,11 @@ export default function UpdateProfileImage(props: {
       }
 
       await uploadImage({
-        user: {
-          secret: props.user.secret,
-          image,
-        },
+        accessToken: props.user.secret,
+        image,
       });
     };
+
     reader.readAsDataURL(file);
   };
 

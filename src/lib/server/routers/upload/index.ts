@@ -8,17 +8,15 @@ export const uploadRouter = {
   uploadImage: publicProcedure
     .input(
       z.object({
-        user: z.object({
-          secret: z.string(),
-          image: z.string(),
-        }),
+        accessToken: z.string(),
+        image: z.string(),
       })
     )
     .mutation(async ({ input }) => {
       /**
        * Get the user from the database to check if they already have a image uploaded
        */
-      const user = await Prisma.getUserBySecret(input.user.secret);
+      const user = await Prisma.getUserBySecret(input.accessToken);
       if (!user) {
         return { message: "Internal error", user: null, success: false };
       }
@@ -26,7 +24,7 @@ export const uploadRouter = {
       /**
        * Upload the image to the blob storage
        */
-      const blob = await uploadFile(user.image, input.user.image);
+      const blob = await uploadFile(user.image, input.image);
       if (!blob) {
         return { message: "Internal error", user: null, success: false };
       }
@@ -34,7 +32,7 @@ export const uploadRouter = {
       /**
        * Update the user with the new image url
        */
-      const updatedUser = await Prisma.updateUserBySecret(input.user.secret, {
+      const updatedUser = await Prisma.updateUserById(user.id, {
         image: blob.url,
       } as User);
 

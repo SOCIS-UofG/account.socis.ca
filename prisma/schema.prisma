@@ -14,36 +14,44 @@ model User {
   updatedAt   DateTime @updatedAt
   secret      String   @unique
   email       String   @unique
-  password    String
-  name        String
-  image       String
+  password    String   @default(uuid())
+  name        String   @default("New User")
   roles       String[] @default(["member"])
   permissions String[] @default(["default"])
+  image       String
 }
 
 model Event {
   id          String   @id @unique @default(uuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  name        String
-  description String
-  image       String
-  date        String
-  location    String
+  name        String   @default("New Event")
+  description String   @default("New Event Description")
+  date        String   @default("No date provided")
+  location    String   @default("No location provided")
   perks       String[] @default([])
   rsvps       String[] @default([]) // User IDs
   pinned      Boolean  @default(false)
+  image       String
 }
 
 model Club {
   id          String   @id @unique @default(uuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  name        String
-  description String
+  name        String   @default("New Club")
+  description String   @default("New Club Description")
+  linktree    String
   image       String
-  events      String[] // Event IDs
-  members     String[] // Member IDs
+}
+
+model Initiative {
+  id          String   @id @unique @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String   @default("New Initiative")
+  description String   @default("New Initiative Description")
+  image       String
 }
 
 // npx prisma migrate dev --name init

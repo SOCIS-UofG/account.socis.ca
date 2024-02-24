@@ -9,6 +9,11 @@ import { type User } from "next-auth";
  * User router
  */
 export const userRouter = {
+  getAllUsers: publicProcedure.mutation(async () => {
+    const users = await Prisma.getAllUsersSecure();
+    return { users, success: true };
+  }),
+
   /**
    * Update an user
    *
@@ -20,7 +25,7 @@ export const userRouter = {
       z.object({
         accessToken: z.string(),
         user: z.object({
-          secret: z.string(),
+          id: z.string(),
           name: z.string(),
           permissions: z.array(z.string()).optional(),
           roles: z.array(z.string()).optional(),
@@ -34,33 +39,19 @@ export const userRouter = {
       }
 
       // If the user is an admin, they can update any user
-      if (hasPermissions(user, [Permission.ADMIN])) {
-        const res = await Prisma.updateUserBySecret(
-          user.secret,
-          input.user as User
-        );
-
-        if (!res) {
-          return { success: false, user: null };
-        }
-
-        return { success: true, user: input.user };
-      }
-
-      // If the user is not an admin, they can only update their own user
-      if (user.secret !== input.user.secret) {
+      if (
+        !hasPermissions(user, [Permission.ADMIN]) &&
+        user.id !== input.user.id
+      ) {
         return { success: false, user: null };
       }
 
-      const res = await Prisma.updateUserBySecret(
-        user.secret,
-        input.user as User
-      );
+      const updatedUser = await Prisma.updateUserById(input.user.id, {
+        name: input.user.name,
+        permissions: input.user.permissions,
+        roles: input.user.roles,
+      } as User);
 
-      if (!res) {
-        return { success: false, user: null };
-      }
-
-      return { success: true, user: input.user };
+      return { success: true, user: updatedUser };
     }),
 };

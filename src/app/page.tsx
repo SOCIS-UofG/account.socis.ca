@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import { BrowserView } from "react-device-detect";
 import { SessionProvider, useSession } from "next-auth/react";
-import Link from "next/link";
-import UpdateNameField from "@/components/UpdateNameField";
+import { UpdateProfileImage, UpdateNameField } from "@/components";
+import { userConfig } from "@/lib/config";
 import {
   CustomCursor,
   LinkButton,
@@ -11,9 +13,6 @@ import {
   MainWrapper,
   Navbar,
 } from "socis-components";
-import UpdateProfileImage from "@/components/UpdateProfileImage";
-import Image from "next/image";
-import { userConfig } from "@/lib/config";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -146,7 +145,13 @@ function Components(): JSX.Element {
               Manage clubs & initiatives, users, and more.
             </p>
           </div>
-          <LinkButton href="https://admin.socis.ca">Manage Users</LinkButton>
+          <LinkButton href="https://account.socis.ca/admin/users">
+            Manage Users
+          </LinkButton>
+          <LinkButton href="https://clubs.socis.ca">Manage Clubs</LinkButton>
+          <LinkButton href="https://initiatives.socis.ca">
+            Manage Initiatives
+          </LinkButton>
         </div>
       </div>
     </MainWrapper>
