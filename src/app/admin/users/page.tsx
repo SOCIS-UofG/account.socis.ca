@@ -3,11 +3,12 @@
 import { SessionProvider, useSession } from "next-auth/react";
 import { type Session, type User } from "next-auth";
 import { type ChangeEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { BrowserView } from "react-device-detect";
 import { trpc } from "@/lib/trpc/client";
 import { hasPermissions } from "@/lib/utils";
 import { Permission, Role, type Optional } from "@/types";
-import { UserHeader, CustomCheckbox } from "@/components";
+import { CustomCheckbox } from "@/components";
 import {
   Button,
   CustomCursor,
@@ -87,13 +88,6 @@ function Components(): JSX.Element {
       setStatus(res.success ? Status.FETCH_SUCCESS : Status.FETCH_ERROR);
     });
   }, [sessionStatus]);
-
-  /**
-   * If the user is loading, then return a loading screen.
-   */
-  if (sessionStatus === "loading" || status === Status.FETCHING) {
-    return <LoadingSpinnerCenter />;
-  }
 
   /**
    * Save the changes to the user.
@@ -180,11 +174,18 @@ function Components(): JSX.Element {
   }
 
   /**
+   * If the user is loading, then return a loading screen.
+   */
+  if (sessionStatus === "loading" || status === Status.FETCHING) {
+    return <LoadingSpinnerCenter />;
+  }
+
+  /**
    * Check if the user is authenticated.
    *
    * If the user is not authenticated, then return an invalid session component.
    */
-  if (sessionStatus === "unauthenticated" || !session) {
+  if (sessionStatus !== "authenticated") {
     return (
       <MainWrapper>
         <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
@@ -234,7 +235,7 @@ function Components(): JSX.Element {
         Manage users
       </h1>
       <p className="text-center text-sm font-light text-white/80">
-        {session?.user?.email ?? "user"}.
+        {session.user.email ?? "user"}.
       </p>
 
       <input
@@ -259,7 +260,20 @@ function Components(): JSX.Element {
             className="flex w-full flex-col items-start justify-start gap-2 rounded-md border border-primary p-3"
           >
             <div className="flex w-full flex-row items-center justify-between">
-              <UserHeader user={user} />
+              <div className="flex flex-row items-center justify-center gap-4">
+                <Image
+                  src={user.image || "/images/default-pfp.png"}
+                  alt="..."
+                  className="rounded-full"
+                  width={50}
+                  height={50}
+                />
+
+                <div className="flex flex-col items-start justify-start">
+                  <h1 className="text-white">{user.name}</h1>
+                  <p className="text-sm font-thin text-white">{user.email}</p>
+                </div>
+              </div>
 
               {/**
                * Button to edit the user
