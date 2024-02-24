@@ -16,6 +16,11 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
+
+  // enable domains
+  images: {
+    domains: ["0qq6olfydjtmwubd.public.blob.vercel-storage.com"],
+  },
 };
 
 /**

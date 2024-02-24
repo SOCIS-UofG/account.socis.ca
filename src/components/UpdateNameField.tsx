@@ -35,7 +35,7 @@ export default function UpdateNameField(props: { user: User }): JSX.Element {
       accessToken: props.user.secret,
       user: {
         id: props.user.id,
-        name: props.user.name,
+        name,
       } as User,
     });
   }
