@@ -78,7 +78,7 @@ function Components(): JSX.Element {
   }
 
   return (
-    <MainWrapper>
+    <MainWrapper className="items-start justify-start gap-20 px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
       <div className="flex flex-col justify-start items-start border-primary/20 border-2 rounded-lg p-12">
         {/**
          * USER INFO

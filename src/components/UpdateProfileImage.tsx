@@ -73,7 +73,9 @@ export default function UpdateProfileImage(props: {
       </form>
 
       {status === "error" ||
-        (!data?.success && <ErrorMessage>Failed to update name.</ErrorMessage>)}
+        (data && !data.success && (
+          <ErrorMessage>Failed to update name.</ErrorMessage>
+        ))}
 
       {status === "success" && (
         <SuccessMessage>Name updated successfully.</SuccessMessage>
