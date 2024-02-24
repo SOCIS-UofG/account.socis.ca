@@ -85,12 +85,12 @@ function Components(): JSX.Element {
          *
          * The user info section displays the user's name and email.
          */}
-        <div className="flex flex-row items-center justify-start gap-3 w-full">
+        <div className="flex flex-row items-center justify-start gap-6 w-full">
           <Image
             src={session.user.image || userConfig.default.image}
             alt="..."
-            width={100}
-            height={100}
+            width={75}
+            height={75}
             className="rounded-full"
           />
           <div className="flex flex-col items-start justify-start gap-1">
