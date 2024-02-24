@@ -314,12 +314,6 @@ function Components(): JSX.Element {
                       President
                     </CustomCheckbox>
                     <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.VICE_PRESIDENT)}
-                      defaultSelected={user.roles.includes(Role.VICE_PRESIDENT)}
-                    >
-                      Vice President
-                    </CustomCheckbox>
-                    <CustomCheckbox
                       onChange={(e) => onRoleChange(e, Role.PROJECT_MANAGER)}
                       defaultSelected={user.roles.includes(
                         Role.PROJECT_MANAGER
@@ -332,12 +326,6 @@ function Components(): JSX.Element {
                       defaultSelected={user.roles.includes(Role.SERM_APPROVED)}
                     >
                       SE&RM Approved
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.TREASURER)}
-                      defaultSelected={user.roles.includes(Role.TREASURER)}
-                    >
-                      Treasurer
                     </CustomCheckbox>
                   </div>
 
