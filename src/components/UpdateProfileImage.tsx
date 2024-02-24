@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc/client";
+import { type User } from "next-auth";
 import { useRef, type FormEvent } from "react";
 import {
   Button,
@@ -7,16 +8,13 @@ import {
   SuccessMessage,
 } from "socis-components";
 
-export default function UpdateProfileImage(props: {
-  user: {
-    secret: string;
-  };
-}) {
+export default function UpdateProfileImage(props: { user: User }) {
   const {
-    mutateAsync: uploadImage,
+    mutateAsync: updateUserProfileImage,
     status,
     data,
-  } = trpc.uploadImage.useMutation();
+  } = trpc.updateUserProfileImage.useMutation();
+
   const imageRef = useRef<HTMLInputElement>(null);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -35,7 +33,7 @@ export default function UpdateProfileImage(props: {
         return;
       }
 
-      await uploadImage({
+      await updateUserProfileImage({
         accessToken: props.user.secret,
         image,
       });
