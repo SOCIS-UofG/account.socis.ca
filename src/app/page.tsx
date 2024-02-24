@@ -78,7 +78,7 @@ function Components(): JSX.Element {
   }
 
   return (
-    <MainWrapper className="items-start justify-start gap-20 px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
+    <MainWrapper className="px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
       <div className="flex flex-col justify-start items-start border-primary/20 border-2 rounded-lg p-12">
         {/**
          * USER INFO
@@ -94,10 +94,10 @@ function Components(): JSX.Element {
             className="rounded-full"
           />
           <div className="flex flex-col items-start justify-start gap-1">
-            <h1 className="text-center text-5xl font-bold text-white">
+            <h1 className="text-left text-4xl md:text-5xl font-bold text-white">
               Welcome, {session.user.name.split(" ")[0]}
             </h1>
-            <p className="text-center text-sm font-light text-white/80">
+            <p className="text-left text-sm font-light text-white/80">
               {session.user.name} -- {session.user.email}
             </p>
           </div>
@@ -138,10 +138,10 @@ function Components(): JSX.Element {
          */}
         <div className="mt-12 flex flex-col items-start justify-start gap-3">
           <div className="flex flex-col justify-start items-start">
-            <h1 className="text-center text-2xl font-bold text-white">
+            <h1 className="text-start text-2xl font-bold text-white">
               Admin Console
             </h1>
-            <p className="text-center text-sm font-light text-white/80">
+            <p className="text-start text-sm font-light text-white/80">
               Manage clubs & initiatives, users, and more.
             </p>
           </div>
