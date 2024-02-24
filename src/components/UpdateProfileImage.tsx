@@ -49,7 +49,9 @@ export default function UpdateProfileImage(props: { user: User }) {
         onSubmit={onSubmit}
       >
         <div className="flex flex-col gap-1 w-full">
-          <label className="text-white/80 font-light">Update Username</label>
+          <label className="text-white/80 font-light">
+            Update Profile Image
+          </label>
           <input
             ref={imageRef} // Add ref to input
             type="file"
@@ -72,11 +74,11 @@ export default function UpdateProfileImage(props: { user: User }) {
 
       {status === "error" ||
         (data && !data.success && (
-          <ErrorMessage>Failed to update name.</ErrorMessage>
+          <ErrorMessage>Failed to update profile image.</ErrorMessage>
         ))}
 
       {status === "success" && (
-        <SuccessMessage>Name updated successfully.</SuccessMessage>
+        <SuccessMessage>Profile Image updated successfully.</SuccessMessage>
       )}
     </div>
   );

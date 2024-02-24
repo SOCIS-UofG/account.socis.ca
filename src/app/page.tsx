@@ -79,13 +79,13 @@ function Components(): JSX.Element {
 
   return (
     <MainWrapper className="px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
-      <div className="flex flex-col justify-start items-start border-primary/20 border-2 rounded-lg p-12">
+      <div className="flex flex-col justify-start gap-4 items-start border-primary/20 border-2 rounded-lg p-12">
         {/**
          * USER INFO
          *
          * The user info section displays the user's name and email.
          */}
-        <div className="flex flex-row items-center justify-start gap-6 w-full">
+        <div className="flex flex-row items-center justify-start gap-2 w-full">
           <Image
             src={session.user.image || userConfig.default.image}
             alt="..."
@@ -125,7 +125,7 @@ function Components(): JSX.Element {
          * The settings section allows the user to change their settings.
          * Anyone can access this section.
          */}
-        <div className="my-4 flex flex-col items-start justify-start gap-3 w-full">
+        <div className="flex flex-col items-start justify-start gap-3 w-full">
           <UpdateNameField user={session.user} />
           <UpdateProfileImage user={session.user} />
         </div>
@@ -137,7 +137,7 @@ function Components(): JSX.Element {
          * see a list of routes where they can manage the website.
          */}
         <div className="mt-12 flex flex-col items-start justify-start gap-3">
-          <div className="flex flex-col justify-start items-start">
+          <div className="flex flex-col justify-start items-start gap-0">
             <h1 className="text-start text-2xl font-bold text-white">
               Admin Console
             </h1>
@@ -145,13 +145,17 @@ function Components(): JSX.Element {
               Manage clubs & initiatives, users, and more.
             </p>
           </div>
-          <LinkButton href="https://account.socis.ca/admin/users">
-            Manage Users
-          </LinkButton>
-          <LinkButton href="https://clubs.socis.ca">Manage Clubs</LinkButton>
-          <LinkButton href="https://initiatives.socis.ca">
-            Manage Initiatives
-          </LinkButton>
+
+          <div className="flex flex-wrap gap-3">
+            <LinkButton href="/admin/users">Manage Users</LinkButton>
+            <LinkButton href="https://clubs.socis.ca">Manage Clubs</LinkButton>
+            <LinkButton href="https://events.socis.ca">
+              Manage Events
+            </LinkButton>
+            <LinkButton href="https://initiatives.socis.ca">
+              Manage Initiatives
+            </LinkButton>
+          </div>
         </div>
       </div>
     </MainWrapper>
