@@ -8,15 +8,7 @@ import {
   SuccessMessage,
 } from "socis-components";
 
-interface UpdateNameFieldProps {
-  user: {
-    secret: string;
-    name: string;
-  };
-}
-export default function UpdateNameField(
-  props: UpdateNameFieldProps
-): JSX.Element {
+export default function UpdateNameField(props: { user: User }): JSX.Element {
   /**
    * Updates the user's name in the database.
    */
@@ -42,7 +34,8 @@ export default function UpdateNameField(
     await updateUser({
       accessToken: props.user.secret,
       user: {
-        name,
+        id: props.user.id,
+        name: props.user.name,
       } as User,
     });
   }

@@ -127,7 +127,7 @@ function Components(): JSX.Element {
          */}
         <div className="my-4 flex flex-col items-start justify-start gap-3 w-full">
           <UpdateNameField user={session.user} />
-          <UpdateProfileImage user={{ secret: session.user.secret }} />
+          <UpdateProfileImage user={session.user} />
         </div>
 
         {/**
