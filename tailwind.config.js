@@ -11,16 +11,18 @@ module.exports = {
   darkMode: "class",
   plugins: [
     nextui({
-      // addCommonColors: true, (add tailwind colors)
+      // set the background color to #1f1f1f;
       themes: {
+        light: {
+          colors: {
+            background: "#1f1f1f", // or DEFAULT
+          },
+        },
         dark: {
           colors: {
-            primary: {
-              // DEFAULT: "",
-              // foreground: "",
-            },
-            // focus: "",
+            background: "#1f1f1f", // or DEFAULT
           },
+          // ... rest of the colors
         },
       },
     }),
