@@ -116,7 +116,7 @@ function Components(): JSX.Element {
         <h1 className="text-5xl font-bold leading-tight text-white md:text-6xl">
           Manage Users
         </h1>
-        <p className="w-3/5 text-sm text-gray-200/70">
+        <p className="w-full sm:w-3/5 text-sm text-gray-200/70">
           Manage registered users. You can search for an user below to quickly
           modify their details. Or <Link href="/">go back</Link> to your
           account.
