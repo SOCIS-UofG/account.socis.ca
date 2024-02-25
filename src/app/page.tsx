@@ -94,7 +94,7 @@ function Components(): JSX.Element {
             className="rounded-full"
           />
           <div className="flex flex-col items-start justify-start gap-1">
-            <h1 className="text-left text-4xl md:text-5xl font-bold text-white">
+            <h1 className="text-left text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
               Welcome, {session.user.name.split(" ")[0]}
             </h1>
             <p className="text-left text-sm font-light text-white/80">
