@@ -1,400 +1,544 @@
 "use client";
 
-import { SessionProvider, useSession } from "next-auth/react";
-import { type Session, type User } from "next-auth";
-import { type ChangeEvent, useEffect, useState } from "react";
-import Image from "next/image";
-import { BrowserView } from "react-device-detect";
 import { trpc } from "@/lib/trpc/client";
-import { hasPermissions } from "@/lib/utils";
-import { Permission, Role, type Optional } from "@/types";
-import { CustomCheckbox } from "@/components";
+import { hasPermissions } from "@/lib/utils/permissions";
+import { Permission, Role } from "@/types";
+import { type User } from "next-auth";
+import { SessionProvider, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import {
-  Button,
-  CustomCursor,
-  LoadingSpinner,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Link,
+  Button as NextUIButton,
+  NextUIProvider,
+  User as UserHeader,
+} from "@nextui-org/react";
+
+import {
+  LinkButton,
   LoadingSpinnerCenter,
   MainWrapper,
   Navbar,
-  LinkButton,
 } from "socis-components";
 
-enum Status {
-  NEEDS_FETCH,
-  FETCHING,
-  FETCH_SUCCESS,
-  FETCH_ERROR,
-
-  UPDATING,
-  UPDATE_SUCCESS,
-  UPDATE_ERROR,
-
-  DEFAULT,
-}
-
 /**
- * Wraps the main components in a session provider for next auth.
- * @returns JSX.Element
+ * The account dashboard page
+ *
+ * @returns The JSX element
  */
-export default function ManageUsersPage(): JSX.Element {
+export default function DashboardPage() {
   return (
     <>
-      <Navbar className="z-40" />
+      <Navbar />
 
-      <BrowserView>
-        <CustomCursor />
-      </BrowserView>
-
-      <SessionProvider>
-        <Components />
-      </SessionProvider>
+      <NextUIProvider>
+        <SessionProvider>
+          <Components />
+        </SessionProvider>
+      </NextUIProvider>
     </>
   );
 }
 
 /**
- * The main components for the account page. These are to be wrapped in a session provider
- * for next auth.
+ * The main components of the home page
  *
- * @returns JSX.Element
+ * @returns The JSX element
  */
 function Components(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
-  const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
-  const { mutateAsync: getAllUsers } = trpc.getAllUsers.useMutation();
+  const { mutateAsync: getAllUsers, status: getAllUsersStatus } =
+    trpc.getAllUsers.useMutation();
+  const { mutateAsync: updateUser, status: updateUserStatus } =
+    trpc.updateUser.useMutation();
 
-  /**
-   * States for the users and status.
-   */
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [status, setStatus] = useState<Status>(Status.NEEDS_FETCH);
+  const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState<string>("");
-  const [userBeingEdited, setUserBeingEdited] = useState<Optional<User>>();
 
   useEffect(() => {
-    /**
-     * If the fetch status is not idle, then don't fetch the users.
-     */
-    if (status !== Status.NEEDS_FETCH || sessionStatus !== "authenticated") {
+    if (getAllUsersStatus === "loading" || getAllUsersStatus === "success") {
       return;
     }
 
-    /**
-     * Set the status to loading and fetch the users.
-     */
-    setStatus(Status.FETCHING);
+    if (!session || sessionStatus !== "authenticated") {
+      return;
+    }
+
     getAllUsers().then((res) => {
-      setAllUsers(res.users);
-      setStatus(res.success ? Status.FETCH_SUCCESS : Status.FETCH_ERROR);
+      if (!res.success) {
+        return;
+      }
+
+      setUsers(res.users as User[]);
     });
-  }, [sessionStatus]);
+  }, [session, sessionStatus]);
 
-  /**
-   * Save the changes to the user.
-   *
-   * @param session The current session
-   * @returns Promise<void>
-   */
-  async function saveChanges(session: Session): Promise<void> {
-    setStatus(Status.UPDATING);
-
-    if (!userBeingEdited) {
-      return setStatus(Status.UPDATE_ERROR);
-    }
-
-    const newPermissions = userBeingEdited.permissions;
-    const res = await updateUser({
-      accessToken: session.user.secret,
-      user: {
-        id: userBeingEdited.id,
-        name: userBeingEdited.name,
-        permissions: newPermissions,
-        roles: userBeingEdited.roles,
-      },
-    });
-
-    if (!res.success) {
-      return setStatus(Status.UPDATE_ERROR);
-    }
-
-    setAllUsers(
-      allUsers.map((user) => {
-        if (user.id === userBeingEdited.id) {
-          return {
-            ...user,
-            permissions: newPermissions,
-          };
-        }
-
-        return user;
-      })
-    );
-
-    setUserBeingEdited(undefined);
-    setStatus(Status.UPDATE_SUCCESS);
-  }
-
-  /**
-   * Update the permissions for the user.
-   *
-   * @param e The change event
-   * @param p The permission to change
-   */
-  function onPermissionChange(e: ChangeEvent<HTMLInputElement>, p: Permission) {
-    if (!userBeingEdited) {
-      return;
-    }
-
-    e.target.checked && !userBeingEdited.permissions.includes(p)
-      ? userBeingEdited.permissions.push(p)
-      : userBeingEdited.permissions.splice(
-          userBeingEdited.permissions.indexOf(p),
-          1
-        );
-
-    setUserBeingEdited(userBeingEdited);
-  }
-
-  /**
-   * Update the roles for the user.
-   *
-   * @param e The change event
-   * @param r The role to change
-   */
-  function onRoleChange(e: ChangeEvent<HTMLInputElement>, r: string) {
-    if (!userBeingEdited) {
-      return;
-    }
-
-    e.target.checked && !userBeingEdited.roles.includes(r)
-      ? userBeingEdited.roles.push(r)
-      : userBeingEdited.roles.splice(userBeingEdited.roles.indexOf(r), 1);
-
-    setUserBeingEdited(userBeingEdited);
-  }
-
-  /**
-   * If the user is loading, then return a loading screen.
-   */
-  if (sessionStatus === "loading" || status === Status.FETCHING) {
+  if (sessionStatus === "loading" || getAllUsersStatus === "loading") {
     return <LoadingSpinnerCenter />;
   }
 
-  /**
-   * Check if the user is authenticated.
-   *
-   * If the user is not authenticated, then return an invalid session component.
-   */
-  if (sessionStatus !== "authenticated") {
+  if (sessionStatus === "unauthenticated" || !session) {
     return (
-      <MainWrapper>
-        <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
-          Invalid Session
+      <MainWrapper className="relative z-10 w-full justify-start gap-2 px-12 py-40 text-center">
+        <h1 className="text-7xl font-extrabold tracking-wide text-white">
+          Invalid session
         </h1>
-
-        <div className="flex flex-col gap-5">
-          <p className="text-center text-sm font-light text-white lg:text-base">
-            Please sign in to proceed.
-          </p>
-          <LinkButton href="https://auth.socis.ca/signin">Sign in</LinkButton>
-        </div>
+        <p className="my-4 text-gray-400">
+          You need to be signed in to access this page.
+        </p>
+        <LinkButton href="https://auth.socis.ca/signin">Sign in</LinkButton>
       </MainWrapper>
     );
   }
 
-  /**
-   * Check if the user has the permissions to manage users.
-   *
-   * If the user does not have the permissions, then return an invalid permissions component.
-   */
   if (!hasPermissions(session.user, [Permission.ADMIN])) {
     return (
-      <MainWrapper>
-        <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
-          Invalid Permissions
+      <MainWrapper className="relative z-10 w-full justify-start gap-2 px-12 py-40 text-center">
+        <h1 className="text-7xl font-extrabold tracking-wide text-white">
+          Unauthorized
         </h1>
-
-        <div className="flex flex-col gap-5">
-          <p className="text-center text-sm font-light text-white lg:text-base">
-            You do not have the permissions to manage users.
-          </p>
-          <LinkButton href="https://auth.socis.ca/signin">
-            Switch accounts
-          </LinkButton>
-        </div>
+        <p className="my-4 text-gray-400">
+          You do not have permission to access this page. (need: admin)
+        </p>
+        <LinkButton href="https://auth.socis.ca/signin">
+          Switch accounts
+        </LinkButton>
       </MainWrapper>
     );
   }
 
-  /**
-   * Return the main components.
-   */
   return (
-    <MainWrapper className="z-40 w-full items-start justify-start gap-4 p-20 pt-52">
-      <h1 className="text-center text-5xl font-bold text-white">
-        Manage users
-      </h1>
-      <p className="text-center text-sm font-light text-white/80">
-        {session.user.email ?? "user"}.
-      </p>
+    <MainWrapper className="relative items-start justify-start gap-7 px-7 pb-16 pt-32 lg:px-20 lg:pt-40">
+      <div className="z-10 flex w-fit flex-col gap-4 text-white">
+        <h1 className="text-5xl font-bold leading-tight text-white md:text-6xl">
+          Manage Users
+        </h1>
+        <p className="w-3/5 text-sm text-gray-200/70">
+          Manage registered users. You can search for an user below to quickly
+          modify their details. Or <Link href="/">go back</Link> to your
+          account.
+        </p>
+        <input
+          type="text"
+          placeholder="Search for an user"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-3 rounded-md border-2 text-white bg-secondary border-primary/10 focus:border-primary/20 focus:outline-none transition-all duration-300 ease-in-out"
+        />
+      </div>
 
-      <input
-        className="mt-2 flex w-full rounded-lg border border-primary bg-transparent px-4 py-2 text-base font-thin tracking-wider text-white duration-300 ease-in-out focus:outline-none"
-        type="text"
-        placeholder="Search for a user..."
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      {/**
+       * An array of user cards
+       */}
+      <div className="flex w-full flex-wrap gap-7">
+        {users.map((user) => {
+          if (
+            !user.name.toLowerCase().includes(search.toLowerCase()) &&
+            !user.email.toLowerCase().includes(search.toLowerCase())
+          ) {
+            return null;
+          }
 
-      {allUsers.map((user) => {
-        // If the user doesn't match the search query, don't render them
-        if (
-          !user.name.toLowerCase().includes(search) &&
-          !user.email.toLowerCase().includes(search)
-        ) {
-          return <></>;
-        }
+          const addPermission = async (permission: Permission) => {
+            const res = await updateUser({
+              accessToken: session.user.secret,
+              user: {
+                id: user.id,
+                permissions: user.permissions
+                  .filter((p) => p !== permission) // remove the permission (if already exists)
+                  .concat(permission), // add the permission
+              },
+            });
 
-        return (
-          <div
-            key={user.id}
-            className="flex w-full flex-col items-start justify-start gap-2 rounded-md border border-primary p-3"
-          >
-            <div className="flex w-full flex-row items-center justify-between">
-              <div className="flex flex-row items-center justify-center gap-4">
-                <Image
-                  src={user.image || "/images/default-pfp.png"}
-                  alt="..."
-                  className="rounded-full"
-                  width={50}
-                  height={50}
-                />
+            if (!res.success || !res.user) {
+              return;
+            }
 
-                <div className="flex flex-col items-start justify-start">
-                  <h1 className="text-white">{user.name}</h1>
-                  <p className="text-sm font-thin text-white">{user.email}</p>
+            setUsers((prev) =>
+              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
+            );
+          };
+
+          const removePermission = async (permission: Permission) => {
+            const res = await updateUser({
+              accessToken: session.user.secret,
+              user: {
+                id: user.id,
+                permissions: user.permissions.filter((p) => p !== permission),
+              },
+            });
+
+            if (!res.success || !res.user) {
+              return;
+            }
+
+            setUsers((prev) =>
+              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
+            );
+          };
+
+          const addRole = async (role: string) => {
+            const res = await updateUser({
+              accessToken: session.user.secret,
+              user: {
+                id: user.id,
+                roles: user.roles.concat(role),
+              },
+            });
+
+            if (!res.success || !res.user) {
+              return;
+            }
+
+            setUsers((prev) =>
+              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
+            );
+          };
+
+          const removeRole = async (role: string) => {
+            const res = await updateUser({
+              accessToken: session.user.secret,
+              user: {
+                id: user.id,
+                roles: user.roles.filter((r) => r !== role),
+              },
+            });
+
+            if (!res.success || !res.user) {
+              return;
+            }
+
+            setUsers((prev) =>
+              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
+            );
+          };
+
+          return (
+            <div
+              key={user.id}
+              className="z-10 flex w-fit max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-primary/10 bg-secondary p-7 text-white"
+            >
+              <UserHeader
+                avatarProps={{
+                  src: user.image,
+                }}
+                name={user.name}
+                description={
+                  <Link href={`mailto:${user.email}`} size="sm">
+                    {user.email}
+                  </Link>
+                }
+              />
+
+              <div className="flex w-full flex-col items-start justify-start gap-1">
+                <p className="text-sm text-gray-200/70">Permissions</p>
+                <div className="flex w-full flex-wrap items-center justify-start gap-2">
+                  {user.permissions.map((permission) => (
+                    <p
+                      key={permission}
+                      className="w-fit rounded-md border border-primary bg-emerald-950/50 px-2 py-1 text-xs font-thin text-white"
+                    >
+                      {permission}
+                    </p>
+                  ))}
                 </div>
               </div>
 
-              {/**
-               * Button to edit the user
-               */}
-              <Button
-                onClick={() =>
-                  setUserBeingEdited(
-                    userBeingEdited?.id === user.id ? undefined : user
-                  )
-                }
-              >
-                {userBeingEdited?.id === user.id ? "Cancel" : "Edit"}
-              </Button>
-            </div>
-
-            {/**
-             * If the user is being edited, then display the permissions
-             */}
-            {userBeingEdited?.id === user.id && (
-              <div className="mt-4 flex w-full flex-row items-center justify-between">
-                <div className="flex flex-col gap-2">
-                  {/**
-                   * ROLES
-                   *
-                   * Manage the users roles
-                   */}
-                  <div className="flex flex-wrap items-center justify-center gap-7">
-                    <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.MEMBER)}
-                      defaultSelected={user.roles.includes(Role.MEMBER)}
+              <div className="flex w-full flex-col items-start justify-start gap-1">
+                <p className="text-sm text-gray-200/70">Roles</p>
+                <div className="flex w-full flex-wrap items-center justify-start gap-2">
+                  {user.roles.map((role) => (
+                    <p
+                      key={role}
+                      className="w-fit rounded-md border border-primary bg-emerald-950/50 px-2 py-1 text-xs font-thin text-white"
                     >
-                      Member
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.PRESIDENT)}
-                      defaultSelected={user.roles.includes(Role.PRESIDENT)}
-                    >
-                      President
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.PROJECT_MANAGER)}
-                      defaultSelected={user.roles.includes(
-                        Role.PROJECT_MANAGER
-                      )}
-                    >
-                      Project Manager
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) => onRoleChange(e, Role.SERM_APPROVED)}
-                      defaultSelected={user.roles.includes(Role.SERM_APPROVED)}
-                    >
-                      SE&RM Approved
-                    </CustomCheckbox>
-                  </div>
-
-                  {/**
-                   * PERMISSIONS
-                   *
-                   * Manage the users permissions
-                   */}
-                  <div className="flex flex-wrap items-center justify-center gap-7">
-                    <CustomCheckbox
-                      disabled={user.id === session.user.id}
-                      onChange={(e) => onPermissionChange(e, Permission.ADMIN)}
-                      defaultSelected={user.permissions.includes(
-                        Permission.ADMIN
-                      )}
-                    >
-                      Admin
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) =>
-                        onPermissionChange(e, Permission.CREATE_EVENT)
-                      }
-                      defaultSelected={user.permissions.includes(
-                        Permission.CREATE_EVENT
-                      )}
-                    >
-                      Create Events
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) =>
-                        onPermissionChange(e, Permission.EDIT_EVENT)
-                      }
-                      defaultSelected={user.permissions.includes(
-                        Permission.EDIT_EVENT
-                      )}
-                    >
-                      Edit Events
-                    </CustomCheckbox>
-                    <CustomCheckbox
-                      onChange={(e) =>
-                        onPermissionChange(e, Permission.DELETE_EVENT)
-                      }
-                      defaultSelected={user.permissions.includes(
-                        Permission.DELETE_EVENT
-                      )}
-                    >
-                      Delete Events
-                    </CustomCheckbox>
-                  </div>
+                      {role}
+                    </p>
+                  ))}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 w-full">
+                <Dropdown
+                  placement="bottom-end"
+                  className="border-2 border-primary/10 bg-secondary text-white"
+                >
+                  <DropdownTrigger>
+                    <NextUIButton variant="bordered" color="primary" size="sm">
+                      Manage Permissions
+                    </NextUIButton>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    aria-label="Modify user permissions"
+                    disabledKeys={
+                      user.id === session.user.id
+                        ? [Permission.ADMIN]
+                        : updateUserStatus === "loading"
+                          ? user.permissions
+                          : []
+                    }
+                  >
+                    <DropdownItem
+                      key={Permission.ADMIN}
+                      onClick={() => {
+                        if (user.permissions.includes(Permission.ADMIN)) {
+                          removePermission(Permission.ADMIN);
+                        } else {
+                          addPermission(Permission.ADMIN);
+                        }
+                      }}
+                    >
+                      {user.permissions.includes(Permission.ADMIN)
+                        ? "Remove: Admin"
+                        : "Add: Admin"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Permission.EDIT_EVENT}
+                      onClick={() => {
+                        if (user.permissions.includes(Permission.EDIT_EVENT)) {
+                          removePermission(Permission.EDIT_EVENT);
+                        } else {
+                          addPermission(Permission.EDIT_EVENT);
+                        }
+                      }}
+                    >
+                      {user.permissions.includes(Permission.EDIT_EVENT)
+                        ? "Remove: Edit Events"
+                        : "Add: Edit Events"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Permission.DELETE_EVENT}
+                      onClick={() => {
+                        if (
+                          user.permissions.includes(Permission.DELETE_EVENT)
+                        ) {
+                          removePermission(Permission.DELETE_EVENT);
+                        } else {
+                          addPermission(Permission.DELETE_EVENT);
+                        }
+                      }}
+                    >
+                      {user.permissions.includes(Permission.DELETE_EVENT)
+                        ? "Remove: Delete Events"
+                        : "Add: Delete Events"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Permission.CREATE_EVENT}
+                      onClick={() => {
+                        if (
+                          user.permissions.includes(Permission.CREATE_EVENT)
+                        ) {
+                          removePermission(Permission.CREATE_EVENT);
+                        } else {
+                          addPermission(Permission.CREATE_EVENT);
+                        }
+                      }}
+                    >
+                      {user.permissions.includes(Permission.CREATE_EVENT)
+                        ? "Remove: Create Events"
+                        : "Add: Create Events"}
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
 
                 {/**
-                 * Button to save the changes
+                 * Add roles
                  */}
-                <Button
-                  disabled={status === Status.UPDATING}
-                  onClick={async () => await saveChanges(session)}
+                <Dropdown
+                  placement="bottom-end"
+                  className="border-2 border-primary/10 bg-secondary text-white"
                 >
-                  {status === Status.UPDATING ? (
-                    <LoadingSpinner className="h-5 w-5" />
-                  ) : (
-                    <p>Save changes</p>
-                  )}
-                </Button>
+                  <DropdownTrigger>
+                    <NextUIButton variant="bordered" color="primary" size="sm">
+                      Manage Roles
+                    </NextUIButton>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    aria-label="Modify user roles"
+                    disabledKeys={
+                      updateUserStatus === "loading" ? user.roles : []
+                    }
+                  >
+                    <DropdownItem
+                      key={Role.TECH_TEAM}
+                      onClick={() => {
+                        if (user.roles.includes(Role.TECH_TEAM)) {
+                          removeRole(Role.TECH_TEAM);
+                        } else {
+                          addRole(Role.TECH_TEAM);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.TECH_TEAM)
+                        ? "Remove: Technology Team"
+                        : "Add: Technology Team"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.EVENTS_TEAM}
+                      onClick={() => {
+                        if (user.roles.includes(Role.EVENTS_TEAM)) {
+                          removeRole(Role.EVENTS_TEAM);
+                        } else {
+                          addRole(Role.EVENTS_TEAM);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.EVENTS_TEAM)
+                        ? "Remove: Events Team"
+                        : "Add: Events Team"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.MARKETING_TEAM}
+                      onClick={() => {
+                        if (user.roles.includes(Role.MARKETING_TEAM)) {
+                          removeRole(Role.MARKETING_TEAM);
+                        } else {
+                          addRole(Role.MARKETING_TEAM);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.MARKETING_TEAM)
+                        ? "Remove: Marketing Team"
+                        : "Add: Marketing Team"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.PROJECT_MANAGER}
+                      onClick={() => {
+                        if (user.roles.includes(Role.PROJECT_MANAGER)) {
+                          removeRole(Role.PROJECT_MANAGER);
+                        } else {
+                          addRole(Role.PROJECT_MANAGER);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.PROJECT_MANAGER)
+                        ? "Remove: Project Manager"
+                        : "Add: Project Manager"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.SERM_APPROVED}
+                      onClick={() => {
+                        if (user.roles.includes(Role.SERM_APPROVED)) {
+                          removeRole(Role.SERM_APPROVED);
+                        } else {
+                          addRole(Role.SERM_APPROVED);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.SERM_APPROVED)
+                        ? "Remove: SE&RM Approved"
+                        : "Add: SE&RM Approved"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.PRESIDENT}
+                      onClick={() => {
+                        if (user.roles.includes(Role.PRESIDENT)) {
+                          removeRole(Role.PRESIDENT);
+                        } else {
+                          addRole(Role.PRESIDENT);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.PRESIDENT)
+                        ? "Remove: President"
+                        : "Add: President"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_INTERNAL}
+                      onClick={() => {
+                        if (user.roles.includes(Role.VICE_PRESIDENT_INTERNAL)) {
+                          removeRole(Role.VICE_PRESIDENT_INTERNAL);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_INTERNAL);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_INTERNAL)
+                        ? "Remove: Vice-President of Internal Affairs"
+                        : "Add: Vice-President of Internal Affairs"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_EXTERNAL}
+                      onClick={() => {
+                        if (user.roles.includes(Role.VICE_PRESIDENT_EXTERNAL)) {
+                          removeRole(Role.VICE_PRESIDENT_EXTERNAL);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_EXTERNAL);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_EXTERNAL)
+                        ? "Remove: Vice-President of External Affairs"
+                        : "Add: Vice-President of External Affairs"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_COMM}
+                      onClick={() => {
+                        if (user.roles.includes(Role.VICE_PRESIDENT_COMM)) {
+                          removeRole(Role.VICE_PRESIDENT_COMM);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_COMM);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_COMM)
+                        ? "Remove: Vice-President of Communications"
+                        : "Add: Vice-President of Communications"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_TECH}
+                      onClick={() => {
+                        if (user.roles.includes(Role.VICE_PRESIDENT_TECH)) {
+                          removeRole(Role.VICE_PRESIDENT_TECH);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_TECH);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_TECH)
+                        ? "Remove: Vice-President of Technology"
+                        : "Add: Vice-President of Technology"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_FINANCIAL}
+                      onClick={() => {
+                        if (
+                          user.roles.includes(Role.VICE_PRESIDENT_FINANCIAL)
+                        ) {
+                          removeRole(Role.VICE_PRESIDENT_FINANCIAL);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_FINANCIAL);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_FINANCIAL)
+                        ? "Remove: Vice-President of Financial Affairs"
+                        : "Add: Vice-President of Financial Affairs"}
+                    </DropdownItem>
+                    <DropdownItem
+                      key={Role.VICE_PRESIDENT_SOCIAL}
+                      onClick={() => {
+                        if (user.roles.includes(Role.VICE_PRESIDENT_SOCIAL)) {
+                          removeRole(Role.VICE_PRESIDENT_SOCIAL);
+                        } else {
+                          addRole(Role.VICE_PRESIDENT_SOCIAL);
+                        }
+                      }}
+                    >
+                      {user.roles.includes(Role.VICE_PRESIDENT_SOCIAL)
+                        ? "Remove: Vice-President of Social Affairs"
+                        : "Add: Vice-President of Social Affairs"}
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
               </div>
-            )}
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
     </MainWrapper>
   );
 }

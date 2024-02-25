@@ -27,7 +27,7 @@ export const userRouter = {
         accessToken: z.string(),
         user: z.object({
           id: z.string(),
-          name: z.string(),
+          name: z.string().optional(),
           permissions: z.array(z.string()).optional(),
           roles: z.array(z.string()).optional(),
         }),
@@ -36,7 +36,7 @@ export const userRouter = {
     .mutation(async ({ input }) => {
       const user = await Prisma.getUserBySecret(input.accessToken);
       if (!user) {
-        return { success: false, user: null };
+        return { success: false, user: null, message: "Invalid user" };
       }
 
       // If the user is an admin, they can update any user
@@ -44,7 +44,7 @@ export const userRouter = {
         !hasPermissions(user, [Permission.ADMIN]) &&
         user.id !== input.user.id
       ) {
-        return { success: false, user: null };
+        return { success: false, user: null, message: "Unauthorized" };
       }
 
       const updatedUser = await Prisma.updateUserById(input.user.id, {
@@ -53,7 +53,7 @@ export const userRouter = {
         roles: input.user.roles,
       } as User);
 
-      return { success: true, user: updatedUser };
+      return { success: true, user: updatedUser, message: "User updated" };
     }),
 
   updateUserProfileImage: publicProcedure
