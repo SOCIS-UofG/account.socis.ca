@@ -646,8 +646,7 @@ function Components(): JSX.Element {
                       </ModalBody>
                       <ModalFooter>
                         <Button
-                          color="danger"
-                          variant="light"
+                          color="default"
                           onPress={onClose}
                           disabled={status === "loading"}
                           className="btn disabled:opacity-50"
