@@ -4,15 +4,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { BrowserView } from "react-device-detect";
 import { SessionProvider, useSession } from "next-auth/react";
-import { UpdateProfileImage, UpdateNameField } from "@/components";
 import { userConfig } from "@/lib/config";
-import {
-  CustomCursor,
-  LinkButton,
-  LoadingSpinnerCenter,
-  MainWrapper,
-  Navbar,
-} from "socis-components";
+import Navbar from "@/components/ui/global/Navbar";
+import CustomCursor from "@/components/ui/global/CustomCursor";
+import { NextUIProvider } from "@nextui-org/system";
+import MainWrapper from "@/components/ui/global/MainWrapper";
+import { Spinner } from "@nextui-org/spinner";
+import { Button } from "@nextui-org/button";
+import { hasPermissions } from "@/lib/utils";
+import { Permission } from "@/types/global/permission";
+import UpdateNameField from "@/components/ui/UpdateNameField";
+import UpdateImageField from "@/components/ui/UpdateImageField";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -20,8 +22,8 @@ import {
  */
 export default function AccountPage() {
   return (
-    <>
-      <Navbar className="z-40" />
+    <NextUIProvider>
+      <Navbar />
 
       <BrowserView>
         <CustomCursor />
@@ -30,7 +32,7 @@ export default function AccountPage() {
       <SessionProvider>
         <Components />
       </SessionProvider>
-    </>
+    </NextUIProvider>
   );
 }
 
@@ -47,7 +49,11 @@ function Components(): JSX.Element {
    * If the user is currently being authenticated, display a loading spinner.
    */
   if (status === "loading") {
-    return <LoadingSpinnerCenter />;
+    return (
+      <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
+        <Spinner color="primary" size="lg" />
+      </MainWrapper>
+    );
   }
 
   /**
@@ -57,7 +63,7 @@ function Components(): JSX.Element {
    */
   if (status === "unauthenticated" || !session) {
     return (
-      <MainWrapper>
+      <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
         <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
           Invalid Session
         </h1>
@@ -66,26 +72,28 @@ function Components(): JSX.Element {
           <p className="text-center text-sm font-light text-white lg:text-base">
             Please sign in to view your account.
           </p>
-          <Link
+          <Button
+            as={Link}
             href="https://auth.socis.ca/signin"
-            className="rounded-lg border border-primary px-10 py-3 text-center font-thin text-white hover:bg-emerald-900/50"
+            color="default"
+            className="w-fit"
           >
-            Sign in
-          </Link>
+            Sign In
+          </Button>
         </div>
       </MainWrapper>
     );
   }
 
   return (
-    <MainWrapper className="px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
-      <div className="flex flex-col justify-start gap-4 items-start border-primary/20 border-2 rounded-lg p-12">
+    <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
+      <div className="flex flex-col items-start justify-start gap-4 rounded-xl border border-neutral-700/50 p-12">
         {/**
          * USER INFO
          *
          * The user info section displays the user's name and email.
          */}
-        <div className="flex flex-row items-center justify-start gap-2 w-full">
+        <div className="flex w-full flex-row items-center justify-start gap-2">
           <Image
             src={session.user.image || userConfig.default.image}
             alt="..."
@@ -93,10 +101,12 @@ function Components(): JSX.Element {
             height={75}
             className="rounded-full"
           />
+
           <div className="flex flex-col items-start justify-start gap-1">
-            <h1 className="text-left text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
+            <h1 className="text-left text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
               Welcome, {session.user.name.split(" ")[0]}
             </h1>
+
             <p className="text-left text-sm font-light text-white/80">
               {session.user.name} -- {session.user.email}
             </p>
@@ -106,12 +116,13 @@ function Components(): JSX.Element {
         {/**
          * Show the users permissions and roles
          */}
-        <div className="flex flex-wrap gap-3 mt-2">
+        <div className="mt-2 flex w-full flex-wrap gap-3">
           {session.user.permissions.map((permission) => (
             <div className="w-fit rounded-md border border-primary bg-emerald-950/50 px-2 py-1 text-xs font-thin text-white">
               {permission}
             </div>
           ))}
+
           {session.user.roles.map((role) => (
             <div className="w-fit rounded-md border border-primary bg-emerald-950/50 px-2 py-1 text-xs font-thin text-white">
               {role}
@@ -125,9 +136,9 @@ function Components(): JSX.Element {
          * The settings section allows the user to change their settings.
          * Anyone can access this section.
          */}
-        <div className="flex flex-col items-start justify-start gap-3 w-full">
+        <div className="flex w-full flex-col items-start justify-start gap-2">
           <UpdateNameField user={session.user} />
-          <UpdateProfileImage user={session.user} />
+          <UpdateImageField user={session.user} />
         </div>
 
         {/**
@@ -136,27 +147,40 @@ function Components(): JSX.Element {
          * If the user is an admin, then display the admin console. Here they can
          * see a list of routes where they can manage the website.
          */}
-        <div className="mt-12 flex flex-col items-start justify-start gap-3">
-          <div className="flex flex-col justify-start items-start gap-0">
-            <h1 className="text-start text-2xl font-bold text-white">
-              Admin Console
-            </h1>
-            <p className="text-start text-sm font-light text-white/80">
-              Manage clubs & initiatives, users, and more.
-            </p>
-          </div>
+        {hasPermissions(session.user, [Permission.ADMIN]) && (
+          <div className="mt-12 flex w-full flex-col items-start justify-start gap-3">
+            <div className="flex w-full flex-col items-start justify-start gap-0">
+              <h1 className="text-start text-2xl font-normal text-white">
+                Admin Console
+              </h1>
+              <p className="text-start text-sm font-light text-white/80">
+                Manage clubs & initiatives, users, and more.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap gap-3">
-            <LinkButton href="/admin/users">Manage Users</LinkButton>
-            <LinkButton href="https://clubs.socis.ca">Manage Clubs</LinkButton>
-            <LinkButton href="https://events.socis.ca">
-              Manage Events
-            </LinkButton>
-            <LinkButton href="https://initiatives.socis.ca">
-              Manage Initiatives
-            </LinkButton>
+            <div className="flex w-full flex-wrap items-start justify-start gap-3">
+              <Button as={Link} href="/admin/users" color="default">
+                Manage Users
+              </Button>
+
+              <Button as={Link} href="https://clubs.socis.ca" color="default">
+                Manage Clubs
+              </Button>
+
+              <Button as={Link} href="https://events.socis.ca" color="default">
+                Manage Events
+              </Button>
+
+              <Button
+                as={Link}
+                href="https://initiatives.socis.ca"
+                color="default"
+              >
+                Manage Initiatives
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </MainWrapper>
   );

@@ -2,27 +2,26 @@
 
 import { trpc } from "@/lib/trpc/client";
 import { hasPermissions } from "@/lib/utils/permissions";
-import { Permission, Role } from "@/types";
 import { type User } from "next-auth";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
+  Button,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Input,
   Link,
-  Button as NextUIButton,
   NextUIProvider,
+  Spinner,
   User as UserHeader,
 } from "@nextui-org/react";
-
-import {
-  LinkButton,
-  LoadingSpinnerCenter,
-  MainWrapper,
-  Navbar,
-} from "socis-components";
+import Navbar from "@/components/ui/global/Navbar";
+import { Status } from "@/types/global/status";
+import MainWrapper from "@/components/ui/global/MainWrapper";
+import { Permission } from "@/types/global/permission";
+import { Role } from "@/types/global/role";
 
 /**
  * The account dashboard page
@@ -31,15 +30,13 @@ import {
  */
 export default function DashboardPage() {
   return (
-    <>
+    <NextUIProvider>
       <Navbar />
 
-      <NextUIProvider>
-        <SessionProvider>
-          <Components />
-        </SessionProvider>
-      </NextUIProvider>
-    </>
+      <SessionProvider>
+        <Components />
+      </SessionProvider>
+    </NextUIProvider>
   );
 }
 
@@ -50,16 +47,15 @@ export default function DashboardPage() {
  */
 function Components(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
-  const { mutateAsync: getAllUsers, status: getAllUsersStatus } =
-    trpc.getAllUsers.useMutation();
-  const { mutateAsync: updateUser, status: updateUserStatus } =
-    trpc.updateUser.useMutation();
+  const { mutateAsync: getAllUsers } = trpc.getAllUsers.useMutation();
+  const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
 
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState<string>("");
+  const [status, setStatus] = useState<Status>("idle");
 
   useEffect(() => {
-    if (getAllUsersStatus === "loading" || getAllUsersStatus === "success") {
+    if (status !== "idle") {
       return;
     }
 
@@ -67,83 +63,109 @@ function Components(): JSX.Element {
       return;
     }
 
-    getAllUsers().then((res) => {
-      if (!res.success) {
-        return;
-      }
+    setStatus("loading");
 
-      setUsers(res.users as User[]);
-    });
+    getAllUsers()
+      .then((res) => {
+        setUsers(res.users);
+        setStatus("success");
+      })
+      .catch(() => setStatus("error"));
   }, [session, sessionStatus]);
 
-  if (sessionStatus === "loading" || getAllUsersStatus === "loading") {
-    return <LoadingSpinnerCenter />;
+  if (sessionStatus === "loading") {
+    return (
+      <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
+        <Spinner color="primary" size="lg" />
+      </MainWrapper>
+    );
   }
 
   if (sessionStatus === "unauthenticated" || !session) {
     return (
-      <MainWrapper className="relative z-10 w-full justify-start gap-2 px-12 py-40 text-center">
-        <h1 className="text-7xl font-extrabold tracking-wide text-white">
-          Invalid session
+      <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
+        <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
+          Invalid Session
         </h1>
-        <p className="my-4 text-gray-400">
-          You need to be signed in to access this page.
-        </p>
-        <LinkButton href="https://auth.socis.ca/signin">Sign in</LinkButton>
+
+        <div className="flex flex-col gap-5">
+          <p className="text-center text-sm font-light text-white lg:text-base">
+            Please sign in to access this page.
+          </p>
+          <Button
+            as={Link}
+            href="https://auth.socis.ca/signin"
+            color="default"
+            className="w-fit"
+          >
+            Sign In
+          </Button>
+        </div>
       </MainWrapper>
     );
   }
 
   if (!hasPermissions(session.user, [Permission.ADMIN])) {
     return (
-      <MainWrapper className="relative z-10 w-full justify-start gap-2 px-12 py-40 text-center">
-        <h1 className="text-7xl font-extrabold tracking-wide text-white">
-          Unauthorized
+      <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
+        <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
+          Invalid Permissions
         </h1>
-        <p className="my-4 text-gray-400">
-          You do not have permission to access this page. (need: admin)
-        </p>
-        <LinkButton href="https://auth.socis.ca/signin">
-          Switch accounts
-        </LinkButton>
+
+        <div className="flex flex-col gap-5">
+          <p className="text-center text-sm font-light text-white lg:text-base">
+            You do not have permission to access this page (need: admin).
+          </p>
+          <Button as={Link} href="/" color="default" className="w-fit">
+            Go Back
+          </Button>
+        </div>
       </MainWrapper>
     );
   }
 
   return (
-    <MainWrapper className="relative items-start justify-start gap-7 px-7 pb-16 pt-32 lg:px-20 lg:pt-40">
+    <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-start gap-7 p-12 px-7 pb-16 pt-32 lg:px-20 lg:pt-40">
       <div className="z-10 flex w-fit flex-col gap-4 text-white">
         <h1 className="text-5xl font-bold leading-tight text-white md:text-6xl">
           Manage Users
         </h1>
-        <p className="w-full sm:w-3/5 text-sm text-gray-200/70">
+
+        <p className="w-full text-sm text-gray-200/70 sm:w-3/5">
           Manage registered users. You can search for an user below to quickly
           modify their details. Or <Link href="/">go back</Link> to your
           account.
         </p>
-        <input
+
+        <Input
+          className="w-full"
           type="text"
+          label="Search"
           placeholder="Search for an user"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-3 rounded-md border-2 text-white bg-secondary border-primary/10 focus:border-primary/20 focus:outline-none transition-all duration-300 ease-in-out"
         />
       </div>
 
       {/**
        * An array of user cards
        */}
-      <div className="flex w-full flex-wrap gap-7">
+      <div className="flex w-full flex-wrap items-start justify-start gap-7">
         {users.map((user) => {
           if (
             !user.name.toLowerCase().includes(search.toLowerCase()) &&
             !user.email.toLowerCase().includes(search.toLowerCase())
           ) {
-            return null;
+            return <></>;
           }
 
+          /**
+           * Add a permission to the user
+           */
           const addPermission = async (permission: Permission) => {
-            const res = await updateUser({
+            setStatus("loading");
+
+            await updateUser({
               accessToken: session.user.secret,
               user: {
                 id: user.id,
@@ -151,75 +173,98 @@ function Components(): JSX.Element {
                   .filter((p) => p !== permission) // remove the permission (if already exists)
                   .concat(permission), // add the permission
               },
-            });
+            })
+              .then((res) => {
+                if (!res.user) {
+                  return setStatus("error");
+                }
 
-            if (!res.success || !res.user) {
-              return;
-            }
-
-            setUsers((prev) =>
-              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
-            );
+                setUsers((prev) =>
+                  prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
+                );
+              })
+              .catch(() => setStatus("error"));
           };
 
+          /**
+           * Remove a permission from the user
+           */
           const removePermission = async (permission: Permission) => {
-            const res = await updateUser({
+            setStatus("loading");
+
+            await updateUser({
               accessToken: session.user.secret,
               user: {
                 id: user.id,
                 permissions: user.permissions.filter((p) => p !== permission),
               },
-            });
+            })
+              .then((res) => {
+                if (!res.user) {
+                  return setStatus("error");
+                }
 
-            if (!res.success || !res.user) {
-              return;
-            }
-
-            setUsers((prev) =>
-              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
-            );
+                setUsers((prev) =>
+                  prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
+                );
+              })
+              .catch(() => setStatus("error"));
           };
 
+          /**
+           * Add a role to the user
+           */
           const addRole = async (role: string) => {
-            const res = await updateUser({
+            setStatus("loading");
+
+            await updateUser({
               accessToken: session.user.secret,
               user: {
                 id: user.id,
                 roles: user.roles.concat(role),
               },
-            });
+            })
+              .then((res) => {
+                if (!res.user) {
+                  return setStatus("error");
+                }
 
-            if (!res.success || !res.user) {
-              return;
-            }
-
-            setUsers((prev) =>
-              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
-            );
+                setUsers((prev) =>
+                  prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
+                );
+              })
+              .catch(() => setStatus("error"));
           };
 
+          /**
+           * Remove a role from the user
+           */
           const removeRole = async (role: string) => {
-            const res = await updateUser({
+            setStatus("loading");
+
+            await updateUser({
               accessToken: session.user.secret,
               user: {
                 id: user.id,
                 roles: user.roles.filter((r) => r !== role),
               },
-            });
+            })
+              .then((res) => {
+                if (!res.user) {
+                  return setStatus("error");
+                }
 
-            if (!res.success || !res.user) {
-              return;
-            }
-
-            setUsers((prev) =>
-              prev.map((u) => (u.id === user.id ? (res.user as User) : u))
-            );
+                setUsers((prev) =>
+                  prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
+                );
+              })
+              .catch(() => setStatus("error"));
           };
 
           return (
             <div
               key={user.id}
-              className="z-10 flex w-fit max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-primary/10 bg-secondary p-7 text-white"
+              className="z-10 flex w-full max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-neutral-700/50 bg-secondary p-7 text-white"
             >
               <UserHeader
                 avatarProps={{
@@ -261,22 +306,22 @@ function Components(): JSX.Element {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 w-full">
+              <div className="flex w-full flex-wrap gap-2">
                 <Dropdown
                   placement="bottom-end"
-                  className="border-2 border-primary/10 bg-secondary text-white"
+                  className="border-2 border-neutral-700/50 bg-secondary text-white"
                 >
                   <DropdownTrigger>
-                    <NextUIButton variant="bordered" color="primary" size="sm">
+                    <Button variant="solid" color="primary" size="sm">
                       Manage Permissions
-                    </NextUIButton>
+                    </Button>
                   </DropdownTrigger>
                   <DropdownMenu
                     aria-label="Modify user permissions"
                     disabledKeys={
                       user.id === session.user.id
                         ? [Permission.ADMIN]
-                        : updateUserStatus === "loading"
+                        : status === "loading"
                           ? user.permissions
                           : []
                     }
@@ -349,18 +394,16 @@ function Components(): JSX.Element {
                  */}
                 <Dropdown
                   placement="bottom-end"
-                  className="border-2 border-primary/10 bg-secondary text-white"
+                  className="border-2 border-neutral-700/50 bg-secondary text-white"
                 >
                   <DropdownTrigger>
-                    <NextUIButton variant="bordered" color="primary" size="sm">
+                    <Button variant="solid" color="primary" size="sm">
                       Manage Roles
-                    </NextUIButton>
+                    </Button>
                   </DropdownTrigger>
                   <DropdownMenu
                     aria-label="Modify user roles"
-                    disabledKeys={
-                      updateUserStatus === "loading" ? user.roles : []
-                    }
+                    disabledKeys={status === "loading" ? user.roles : []}
                   >
                     <DropdownItem
                       key={Role.TECH_TEAM}
