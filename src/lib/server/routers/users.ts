@@ -5,6 +5,7 @@ import { hasPermissions } from "@/lib/utils";
 import { type User } from "next-auth";
 import uploadFile from "./utils/upload";
 import { Permission } from "@/types/global/permission";
+import { del } from "@vercel/blob";
 
 /**
  * User router
@@ -117,6 +118,9 @@ export const userRouter = {
       if (!deletedUser) {
         throw new Error("Error deleting user");
       }
+
+      // delete the user photo from the blob storage
+      await del(deletedUser.image);
 
       return { user: deletedUser };
     }),
