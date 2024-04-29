@@ -68,7 +68,7 @@ export default function UpdateImageField(props: { user: User }) {
 
       <Button
         type="submit"
-        className="h-full w-fit disabled:opacity-50"
+        className="w-fit disabled:opacity-50"
         disabled={status === "loading"}
         color="default"
       >
