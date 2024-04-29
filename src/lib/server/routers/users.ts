@@ -2,9 +2,9 @@ import { Prisma } from "@/lib/prisma";
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
 import { hasPermissions } from "@/lib/utils";
-import { Permission } from "@/types";
 import { type User } from "next-auth";
 import uploadFile from "./utils/upload";
+import { Permission } from "@/types/global/permission";
 
 /**
  * User router
@@ -12,7 +12,8 @@ import uploadFile from "./utils/upload";
 export const userRouter = {
   getAllUsers: publicProcedure.mutation(async () => {
     const users = await Prisma.getAllUsersSecure();
-    return { users, success: true };
+
+    return { users };
   }),
 
   /**
@@ -36,7 +37,7 @@ export const userRouter = {
     .mutation(async ({ input }) => {
       const user = await Prisma.getUserBySecret(input.accessToken);
       if (!user) {
-        return { success: false, user: null, message: "Invalid user" };
+        throw new Error("Invalid user");
       }
 
       // If the user is an admin, they can update any user
@@ -44,7 +45,7 @@ export const userRouter = {
         !hasPermissions(user, [Permission.ADMIN]) &&
         user.id !== input.user.id
       ) {
-        return { success: false, user: null, message: "Unauthorized" };
+        throw new Error("Invalid permissions");
       }
 
       const updatedUser = await Prisma.updateUserById(input.user.id, {
@@ -53,7 +54,7 @@ export const userRouter = {
         roles: input.user.roles,
       } as User);
 
-      return { success: true, user: updatedUser, message: "User updated" };
+      return { user: updatedUser };
     }),
 
   updateUserProfileImage: publicProcedure
@@ -69,7 +70,7 @@ export const userRouter = {
        */
       const user = await Prisma.getUserBySecret(input.accessToken);
       if (!user) {
-        return { message: "Internal error", user: null, success: false };
+        throw new Error("Invalid user");
       }
 
       /**
@@ -77,7 +78,7 @@ export const userRouter = {
        */
       const blob = await uploadFile(user.image, input.image);
       if (!blob) {
-        return { message: "Internal error", user: null, success: false };
+        throw new Error("Error uploading image");
       }
 
       /**
@@ -87,11 +88,10 @@ export const userRouter = {
         image: blob.url,
       } as User);
 
-      /**
-       * Return the updated user
-       */
-      updatedUser
-        ? { message: "Image uploaded", user: updatedUser, success: true }
-        : { message: "Internal error", user: null, success: false };
+      if (!updatedUser) {
+        throw new Error("Error updating user");
+      }
+
+      return { user: updatedUser };
     }),
 };
