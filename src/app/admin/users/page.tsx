@@ -194,6 +194,8 @@ function Components(): JSX.Element {
                 setUsers((prev) =>
                   prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
                 );
+
+                setStatus("success");
               })
               .catch(() => setStatus("error"));
           };
@@ -219,6 +221,8 @@ function Components(): JSX.Element {
                 setUsers((prev) =>
                   prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
                 );
+
+                setStatus("success");
               })
               .catch(() => setStatus("error"));
           };
@@ -244,6 +248,8 @@ function Components(): JSX.Element {
                 setUsers((prev) =>
                   prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
                 );
+
+                setStatus("success");
               })
               .catch(() => setStatus("error"));
           };
@@ -269,6 +275,8 @@ function Components(): JSX.Element {
                 setUsers((prev) =>
                   prev.map((u) => (u.id === user.id ? (res.user as User) : u)),
                 );
+
+                setStatus("success");
               })
               .catch(() => setStatus("error"));
           };
@@ -289,6 +297,8 @@ function Components(): JSX.Element {
                 }
 
                 setUsers((prev) => prev.filter((u) => u.id !== user.id));
+
+                setStatus("success");
               })
               .catch(() => setStatus("error"));
           };
@@ -639,6 +649,8 @@ function Components(): JSX.Element {
                           color="danger"
                           variant="light"
                           onPress={onClose}
+                          disabled={status === "loading"}
+                          className="btn disabled:opacity-50"
                         >
                           Close
                         </Button>
@@ -646,6 +658,8 @@ function Components(): JSX.Element {
                           color="danger"
                           onPress={onClose}
                           onClick={_deleteUser}
+                          disabled={status === "loading"}
+                          className="btn disabled:opacity-50"
                         >
                           Delete User
                         </Button>
