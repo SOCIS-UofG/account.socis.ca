@@ -296,7 +296,7 @@ function Components(): JSX.Element {
           return (
             <div
               key={user.id}
-              className="z-10 flex h-[30rem] min-h-fit w-full max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-neutral-700/50 bg-secondary p-7 text-white"
+              className="z-10 flex min-h-fit w-full max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-neutral-700/50 bg-secondary p-7 text-white"
             >
               <UserHeader
                 avatarProps={{
@@ -614,6 +614,7 @@ function Components(): JSX.Element {
               <Button
                 color="danger"
                 variant="solid"
+                size="sm"
                 onPress={onOpen}
                 disabled={status === "loading"}
               >

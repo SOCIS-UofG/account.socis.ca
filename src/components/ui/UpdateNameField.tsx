@@ -48,7 +48,7 @@ export default function UpdateNameField(props: { user: User }) {
       <Button
         type="submit"
         color="default"
-        className="h-full w-fit disabled:opacity-50"
+        className="w-fit disabled:opacity-50"
         disabled={status === "loading"}
       >
         {status === "loading" ? <Spinner color="white" size="sm" /> : "Update"}
