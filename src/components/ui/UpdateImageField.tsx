@@ -1,8 +1,8 @@
 import { trpc } from "@/lib/trpc/client";
-import { Status } from "@/types/global/status";
+import { type Status } from "@/types/global/status";
 import { Button, Input, Spinner } from "@nextui-org/react";
-import { User } from "next-auth";
-import { useRef, useState, FormEvent } from "react";
+import { type User } from "next-auth";
+import { useRef, useState, type FormEvent } from "react";
 
 export default function UpdateImageField(props: { user: User }) {
   const { mutateAsync: updateUserProfileImage } =
@@ -54,7 +54,7 @@ export default function UpdateImageField(props: { user: User }) {
 
   return (
     <form
-      className="flex w-full flex-row items-end justify-end gap-2"
+      className="flex h-fit w-full flex-row items-end justify-end gap-2"
       onSubmit={onSubmit}
     >
       <Input
@@ -68,12 +68,20 @@ export default function UpdateImageField(props: { user: User }) {
 
       <Button
         type="submit"
-        className="w-fit disabled:opacity-50"
+        className="h-full w-fit disabled:opacity-50"
         disabled={status === "loading"}
         color="default"
       >
         {status === "loading" ? <Spinner color="white" size="sm" /> : "Update"}
       </Button>
+
+      {status === "success" && (
+        <p className="text-sm text-green-500">Image updated successfully!</p>
+      )}
+
+      {status === "error" && (
+        <p className="text-sm text-red-500">Failed to update image</p>
+      )}
     </form>
   );
 }

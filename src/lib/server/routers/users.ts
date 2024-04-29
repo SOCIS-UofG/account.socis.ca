@@ -32,7 +32,7 @@ export const userRouter = {
           permissions: z.array(z.string()).optional(),
           roles: z.array(z.string()).optional(),
         }),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const user = await Prisma.getUserBySecret(input.accessToken);
@@ -62,7 +62,7 @@ export const userRouter = {
       z.object({
         accessToken: z.string(),
         image: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       /**
@@ -93,5 +93,31 @@ export const userRouter = {
       }
 
       return { user: updatedUser };
+    }),
+
+  deleteUser: publicProcedure
+    .input(
+      z.object({
+        accessToken: z.string(),
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const user = await Prisma.getUserBySecret(input.accessToken);
+      if (!user) {
+        throw new Error("Invalid user");
+      }
+
+      // If the user is an admin, they can delete any user
+      if (!hasPermissions(user, [Permission.ADMIN])) {
+        throw new Error("Invalid permissions");
+      }
+
+      const deletedUser = await Prisma.deleteUserById(input.id);
+      if (!deletedUser) {
+        throw new Error("Error deleting user");
+      }
+
+      return { user: deletedUser };
     }),
 };

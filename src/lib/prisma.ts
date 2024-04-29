@@ -27,7 +27,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly findMany = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T[]> => {
     try {
       const tableRef: any = Prisma.getTable(table);
@@ -47,7 +47,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly findOne = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T | null> => {
     try {
       const tableRef: any = Prisma.getTable(table);
@@ -67,7 +67,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly create = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T | null> => {
     try {
       const tableRef: any = Prisma.getTable(table);
@@ -88,7 +88,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly update = async <T>(
     table: string,
-    data: any
+    data: any,
   ): Promise<T | null> => {
     try {
       const tableRef: any = Prisma.getTable(table);
@@ -108,7 +108,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly delete = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T | null> => {
     try {
       const tableRef: any = Prisma.getTable(table);
@@ -148,7 +148,7 @@ export class Prisma extends PrismaClient {
    * @returns The user
    */
   public static readonly getUserByEmailNoPassword = async (
-    email: string
+    email: string,
   ): Promise<User | null> => {
     return await Prisma.findOne("user", {
       where: {
@@ -176,7 +176,7 @@ export class Prisma extends PrismaClient {
    * @returns The user
    */
   public static readonly getUserBySecret = async (
-    secret: string
+    secret: string,
   ): Promise<User | null> => {
     return await Prisma.findOne("user", {
       where: {
@@ -193,13 +193,28 @@ export class Prisma extends PrismaClient {
    */
   public static readonly updateUserById = async (
     id: string,
-    data: User
+    data: User,
   ): Promise<User | null> => {
     return await Prisma.update("user", {
       where: {
         id,
       },
       data,
+    });
+  };
+
+  /**
+   * Delete an user by their id
+   *
+   * @param id The user's id
+   */
+  public static readonly deleteUserById = async (
+    id: string,
+  ): Promise<User | null> => {
+    return await Prisma.delete("user", {
+      where: {
+        id,
+      },
     });
   };
 }

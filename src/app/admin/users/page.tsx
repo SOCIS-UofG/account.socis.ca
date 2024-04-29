@@ -16,9 +16,15 @@ import {
   NextUIProvider,
   Spinner,
   User as UserHeader,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@nextui-org/react";
 import Navbar from "@/components/ui/global/Navbar";
-import { Status } from "@/types/global/status";
+import { type Status } from "@/types/global/status";
 import MainWrapper from "@/components/ui/global/MainWrapper";
 import { Permission } from "@/types/global/permission";
 import { Role } from "@/types/global/role";
@@ -49,6 +55,9 @@ function Components(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
   const { mutateAsync: getAllUsers } = trpc.getAllUsers.useMutation();
   const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
+  const { mutateAsync: deleteUser } = trpc.deleteUser.useMutation();
+
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState<string>("");
@@ -125,7 +134,7 @@ function Components(): JSX.Element {
   }
 
   return (
-    <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-start gap-7 p-12 px-7 pb-16 pt-32 lg:px-20 lg:pt-40">
+    <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-start justify-start gap-7 p-12 px-7 pb-16 pt-32 lg:px-20 lg:pt-40">
       <div className="z-10 flex w-fit flex-col gap-4 text-white">
         <h1 className="text-5xl font-bold leading-tight text-white md:text-6xl">
           Manage Users
@@ -133,8 +142,11 @@ function Components(): JSX.Element {
 
         <p className="w-full text-sm text-gray-200/70 sm:w-3/5">
           Manage registered users. You can search for an user below to quickly
-          modify their details. Or <Link href="/">go back</Link> to your
-          account.
+          modify their details. Or{" "}
+          <Link href="/" size="sm">
+            go back
+          </Link>{" "}
+          to your account.
         </p>
 
         <Input
@@ -261,10 +273,30 @@ function Components(): JSX.Element {
               .catch(() => setStatus("error"));
           };
 
+          /**
+           * Delete a user
+           */
+          const _deleteUser = async () => {
+            setStatus("loading");
+
+            await deleteUser({
+              accessToken: session.user.secret,
+              id: user.id,
+            })
+              .then((res) => {
+                if (!res.user) {
+                  return setStatus("error");
+                }
+
+                setUsers((prev) => prev.filter((u) => u.id !== user.id));
+              })
+              .catch(() => setStatus("error"));
+          };
+
           return (
             <div
               key={user.id}
-              className="z-10 flex w-full max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-neutral-700/50 bg-secondary p-7 text-white"
+              className="z-10 flex h-[30rem] min-h-fit w-full max-w-96 flex-col items-start justify-start gap-3 rounded-md border-2 border-neutral-700/50 bg-secondary p-7 text-white"
             >
               <UserHeader
                 avatarProps={{
@@ -306,13 +338,13 @@ function Components(): JSX.Element {
                 </div>
               </div>
 
-              <div className="flex w-full flex-wrap gap-2">
+              <div className="mt-4 flex w-full flex-wrap gap-2">
                 <Dropdown
                   placement="bottom-end"
                   className="border-2 border-neutral-700/50 bg-secondary text-white"
                 >
                   <DropdownTrigger>
-                    <Button variant="solid" color="primary" size="sm">
+                    <Button variant="solid" color="default" size="sm">
                       Manage Permissions
                     </Button>
                   </DropdownTrigger>
@@ -397,7 +429,7 @@ function Components(): JSX.Element {
                   className="border-2 border-neutral-700/50 bg-secondary text-white"
                 >
                   <DropdownTrigger>
-                    <Button variant="solid" color="primary" size="sm">
+                    <Button variant="solid" color="default" size="sm">
                       Manage Roles
                     </Button>
                   </DropdownTrigger>
@@ -578,6 +610,49 @@ function Components(): JSX.Element {
                   </DropdownMenu>
                 </Dropdown>
               </div>
+
+              <Button
+                color="danger"
+                variant="solid"
+                onPress={onOpen}
+                disabled={status === "loading"}
+              >
+                Delete User
+              </Button>
+
+              <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+                <ModalContent>
+                  {(onClose) => (
+                    <>
+                      <ModalHeader className="flex flex-col gap-1">
+                        Delete User
+                      </ModalHeader>
+                      <ModalBody>
+                        <p className="text-sm text-gray-200/70">
+                          Are you sure you want to delete this user? This action
+                          cannot be undone.
+                        </p>
+                      </ModalBody>
+                      <ModalFooter>
+                        <Button
+                          color="danger"
+                          variant="light"
+                          onPress={onClose}
+                        >
+                          Close
+                        </Button>
+                        <Button
+                          color="danger"
+                          onPress={onClose}
+                          onClick={_deleteUser}
+                        >
+                          Delete User
+                        </Button>
+                      </ModalFooter>
+                    </>
+                  )}
+                </ModalContent>
+              </Modal>
             </div>
           );
         })}
