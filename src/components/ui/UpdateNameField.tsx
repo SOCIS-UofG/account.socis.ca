@@ -1,6 +1,6 @@
 import config from "@/lib/config/user.config";
 import { trpc } from "@/lib/trpc/client";
-import { Status } from "@/types/global/status";
+import { type Status } from "@/types/global/status";
 import { Button } from "@nextui-org/button";
 import { Input, Spinner } from "@nextui-org/react";
 import { type User } from "next-auth";
@@ -30,7 +30,7 @@ export default function UpdateNameField(props: { user: User }) {
 
   return (
     <form
-      className="flex w-full flex-row items-end justify-end gap-3"
+      className="flex h-fit w-full flex-row items-end justify-end gap-3"
       onSubmit={onSubmit}
     >
       <Input
@@ -39,7 +39,7 @@ export default function UpdateNameField(props: { user: User }) {
         maxLength={config.max.name}
         minLength={config.min.name}
         type="text"
-        label="name"
+        label="Name"
         placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -48,11 +48,19 @@ export default function UpdateNameField(props: { user: User }) {
       <Button
         type="submit"
         color="default"
-        className="w-fit disabled:opacity-50"
+        className="h-full w-fit disabled:opacity-50"
         disabled={status === "loading"}
       >
         {status === "loading" ? <Spinner color="white" size="sm" /> : "Update"}
       </Button>
+
+      {status === "success" && (
+        <p className="text-sm text-green-500">Name updated successfully!</p>
+      )}
+
+      {status === "error" && (
+        <p className="text-sm text-red-500">Failed to update name</p>
+      )}
     </form>
   );
 }
