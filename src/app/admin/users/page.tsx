@@ -97,7 +97,7 @@ function Components(): JSX.Element {
           Invalid Session
         </h1>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col items-center justify-center gap-5">
           <p className="text-center text-sm font-light text-white lg:text-base">
             Please sign in to access this page.
           </p>
