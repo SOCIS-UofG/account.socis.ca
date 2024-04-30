@@ -1,7 +1,9 @@
+import config from "@/lib/config/user.config";
 import { trpc } from "@/lib/trpc/client";
 import { type Status } from "@/types/global/status";
 import { Button, Input, Spinner } from "@nextui-org/react";
 import { type User } from "next-auth";
+import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
 export default function UpdateImageField(props: { user: User }) {
@@ -11,6 +13,8 @@ export default function UpdateImageField(props: { user: User }) {
   const imageRef = useRef<HTMLInputElement>(null);
 
   const [status, setStatus] = useState<Status>("idle");
+
+  const router = useRouter();
 
   /**
    * When the form is submitted, update the user's profile image.
@@ -22,6 +26,20 @@ export default function UpdateImageField(props: { user: User }) {
 
     const file = imageRef.current?.files?.[0];
     if (!file) {
+      /**
+       * If there's no file, then just use the default image.
+       */
+      await updateUserProfileImage({
+        accessToken: props.user.secret,
+        image: config.default.image,
+      })
+        .then((res) => {
+          res.user ? setStatus("success") : setStatus("error");
+
+          router.refresh();
+        })
+        .catch(() => setStatus("error"));
+
       return;
     }
 
@@ -45,6 +63,8 @@ export default function UpdateImageField(props: { user: User }) {
       })
         .then((res) => {
           res.user ? setStatus("success") : setStatus("error");
+
+          router.refresh();
         })
         .catch(() => setStatus("error"));
     };

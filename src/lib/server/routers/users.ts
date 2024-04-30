@@ -80,7 +80,7 @@ export const userRouter = {
        */
       let imageUrl = input.image;
 
-      if (imageUrl) {
+      if (imageUrl && imageUrl !== config.default.image) {
         const blob = await uploadFile(user.image, input.image);
 
         if (!blob) {
