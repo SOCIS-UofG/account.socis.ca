@@ -1,7 +1,6 @@
 import { type PutBlobResult, del, put } from "@vercel/blob";
 import { fileb64ToFile } from "./fileb64ToFile";
 import { v4 as uuidv4 } from "uuid";
-import config from "@/lib/config/user.config";
 
 export default async function uploadFile(
   existingFile: string | null,
@@ -23,7 +22,7 @@ export default async function uploadFile(
      *
      * This is to prevent the blob storage from filling up with old files
      */
-    if (existingFile && existingFile !== config.default.image) {
+    if (existingFile) {
       await del(existingFile);
     }
 
