@@ -53,7 +53,7 @@ export default function DashboardPage() {
  */
 function Components(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
-  const { mutateAsync: getAllUsers } = trpc.getAllUsers.useMutation();
+  const { mutateAsync: getAllUsers } = trpc.getAllUsersSecure.useMutation();
   const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
   const { mutateAsync: deleteUser } = trpc.deleteUser.useMutation();
 
