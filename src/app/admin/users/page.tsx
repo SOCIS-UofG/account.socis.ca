@@ -121,7 +121,7 @@ function Components(): JSX.Element {
           Invalid Permissions
         </h1>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col items-center justify-center gap-5">
           <p className="text-center text-sm font-light text-white lg:text-base">
             You do not have permission to access this page (need: admin).
           </p>
