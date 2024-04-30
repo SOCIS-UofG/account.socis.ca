@@ -138,7 +138,11 @@ export const userRouter = {
       }
 
       // delete the user photo from the blob storage
-      await del(deletedUser.image);
+      try {
+        await del(deletedUser.image);
+      } catch (error) {
+        throw new Error("Error deleting user image");
+      }
 
       return { user: { ...deletedUser, password: undefined } };
     }),
