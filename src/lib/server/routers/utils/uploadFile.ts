@@ -1,13 +1,23 @@
 import { type PutBlobResult, del, put } from "@vercel/blob";
-import { fileb64ToFile } from "./files";
+import { fileb64ToFile } from "./fileb64ToFile";
 import { v4 as uuidv4 } from "uuid";
 import config from "@/lib/config/user.config";
 
 export default async function uploadFile(
   existingFile: string | null,
-  file: string
+  file: string,
 ): Promise<PutBlobResult | null> {
   try {
+    if (!file) {
+      return null;
+    }
+
+    // verify file size is less than 5MB
+    const fileSize = Buffer.byteLength(file, "base64");
+    if (fileSize > 5 * 1024 * 1024) {
+      return null;
+    }
+
     /**
      * Delete the old file if it exists
      *
@@ -30,11 +40,6 @@ export default async function uploadFile(
       access: "public",
     });
   } catch (e) {
-    console.log(e);
-
-    /**
-     * If there is an error, return null
-     */
     return null;
   }
 }

@@ -3,15 +3,16 @@ import { publicProcedure } from "../trpc";
 import { z } from "zod";
 import { hasPermissions } from "@/lib/utils";
 import { type User } from "next-auth";
-import uploadFile from "./utils/upload";
+import uploadFile from "./utils/uploadFile";
 import { Permission } from "@/types/global/permission";
 import { del } from "@vercel/blob";
+import config from "@/lib/config/user.config";
 
 /**
  * User router
  */
 export const userRouter = {
-  getAllUsers: publicProcedure.mutation(async () => {
+  getAllUsersSecure: publicProcedure.mutation(async () => {
     const users = await Prisma.getAllUsersSecure();
 
     return { users };
@@ -55,7 +56,7 @@ export const userRouter = {
         roles: input.user.roles,
       } as User);
 
-      return { user: updatedUser };
+      return { user: { ...updatedUser, password: undefined } };
     }),
 
   updateUserProfileImage: publicProcedure
@@ -77,23 +78,32 @@ export const userRouter = {
       /**
        * Upload the image to the blob storage
        */
-      const blob = await uploadFile(user.image, input.image);
-      if (!blob) {
-        throw new Error("Error uploading image");
+      let imageUrl = input.image;
+
+      if (imageUrl) {
+        const blob = await uploadFile(user.image, input.image);
+
+        if (!blob) {
+          throw new Error("Error uploading image");
+        }
+
+        imageUrl = blob.url;
+      } else {
+        imageUrl = config.default.image;
       }
 
       /**
        * Update the user with the new image url
        */
       const updatedUser = await Prisma.updateUserById(user.id, {
-        image: blob.url,
+        image: imageUrl,
       } as User);
 
       if (!updatedUser) {
         throw new Error("Error updating user");
       }
 
-      return { user: updatedUser };
+      return { user: { ...updatedUser, password: undefined } };
     }),
 
   deleteUser: publicProcedure
@@ -122,6 +132,6 @@ export const userRouter = {
       // delete the user photo from the blob storage
       await del(deletedUser.image);
 
-      return { user: deletedUser };
+      return { user: { ...deletedUser, password: undefined } };
     }),
 };
