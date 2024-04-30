@@ -19,6 +19,7 @@ import config from "@/lib/config/user.config";
 import { type Status } from "@/types/global/status";
 import { trpc } from "@/lib/trpc/client";
 import { type User } from "next-auth";
+import { useRouter } from "next/navigation";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -50,6 +51,8 @@ function Components(): JSX.Element {
   const { data: session, status } = useSession();
 
   const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
+
+  const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
   const [updateStatus, setUpdateStatus] = useState<Status>("idle");
@@ -108,6 +111,8 @@ function Components(): JSX.Element {
     await updateUser({ accessToken: session.user.secret, user })
       .then((res) => {
         res.user ? setUpdateStatus("success") : setUpdateStatus("error");
+
+        router.refresh();
       })
       .catch(() => {
         setUpdateStatus("error");
@@ -226,12 +231,12 @@ function Components(): JSX.Element {
 
           {updateStatus === "success" && (
             <p className="text-sm text-green-500">
-              Image updated successfully!
+              Profile updated successfully!
             </p>
           )}
 
           {updateStatus === "error" && (
-            <p className="text-sm text-red-500">Failed to update image</p>
+            <p className="text-sm text-red-500">Failed to update profile.</p>
           )}
         </form>
 
