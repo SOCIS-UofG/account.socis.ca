@@ -4,6 +4,7 @@ import { type Status } from "@/types/global/status";
 import { Button } from "@nextui-org/button";
 import { Input, Spinner } from "@nextui-org/react";
 import { type User } from "next-auth";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 export default function UpdateNameField(props: { user: User }) {
@@ -11,6 +12,8 @@ export default function UpdateNameField(props: { user: User }) {
 
   const [name, setName] = useState(props.user.name);
   const [status, setStatus] = useState<Status>("idle");
+
+  const router = useRouter();
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,6 +27,8 @@ export default function UpdateNameField(props: { user: User }) {
     })
       .then((res) => {
         res.user ? setStatus("success") : setStatus("error");
+
+        router.refresh();
       })
       .catch(() => setStatus("error"));
   };
