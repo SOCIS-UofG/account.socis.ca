@@ -13,11 +13,12 @@ import { Spinner } from "@nextui-org/spinner";
 import { Button } from "@nextui-org/button";
 import { hasPermissions } from "@/lib/utils";
 import { Permission } from "@/types/global/permission";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Input } from "@nextui-org/react";
 import config from "@/lib/config/user.config";
 import { type Status } from "@/types/global/status";
 import { trpc } from "@/lib/trpc/client";
+import { type User } from "next-auth";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -50,8 +51,14 @@ function Components(): JSX.Element {
 
   const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
 
-  const [user, setUser] = useState(session?.user);
+  const [user, setUser] = useState<User | null>(null);
   const [updateStatus, setUpdateStatus] = useState<Status>("idle");
+
+  useEffect(() => {
+    if (session && !user) {
+      setUser(session.user);
+    }
+  }, [session]);
 
   /**
    * If the user is currently being authenticated, display a loading spinner.
@@ -76,7 +83,7 @@ function Components(): JSX.Element {
           Invalid Session
         </h1>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col items-center justify-center gap-5">
           <p className="text-center text-sm font-light text-white lg:text-base">
             Please sign in to view your account.
           </p>
