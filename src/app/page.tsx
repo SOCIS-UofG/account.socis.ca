@@ -83,7 +83,7 @@ function Components(): JSX.Element {
           Invalid Session
         </h1>
 
-        <div className="flex flex-col items-center justify-center gap-5">
+        <div className="flex w-full flex-col items-center justify-center gap-5">
           <p className="text-center text-sm font-light text-white lg:text-base">
             Please sign in to view your account.
           </p>
@@ -91,7 +91,7 @@ function Components(): JSX.Element {
             as={Link}
             href="https://auth.socis.ca/signin"
             color="default"
-            className="w-fit"
+            className="btn"
           >
             Sign In
           </Button>
