@@ -77,6 +77,14 @@ export const userRouter = {
 
       /**
        * Upload the image to the blob storage
+       *
+       * input.image is the image to be uploaded.
+       *
+       * it can be a base64 string, empty string, or the default event image (which is a relative path).
+       *
+       * we want to make sure that we're not uploading the default image to the blob storage.
+       *
+       * in the uploadFile function we also check if the image is less than 5mb.
        */
       let imageUrl = input.image;
 
@@ -130,7 +138,11 @@ export const userRouter = {
       }
 
       // delete the user photo from the blob storage
-      await del(deletedUser.image);
+      try {
+        await del(deletedUser.image);
+      } catch (error) {
+        throw new Error("Error deleting user image");
+      }
 
       return { user: { ...deletedUser, password: undefined } };
     }),
