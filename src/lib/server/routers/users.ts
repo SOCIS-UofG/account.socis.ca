@@ -33,6 +33,7 @@ export const userRouter = {
           name: z.string().optional(),
           permissions: z.array(z.string()).optional(),
           roles: z.array(z.string()).optional(),
+          image: z.string().optional(),
         }),
       }),
     )
@@ -50,31 +51,6 @@ export const userRouter = {
         throw new Error("Invalid permissions");
       }
 
-      const updatedUser = await Prisma.updateUserById(input.user.id, {
-        name: input.user.name,
-        permissions: input.user.permissions,
-        roles: input.user.roles,
-      } as User);
-
-      return { user: { ...updatedUser, password: undefined } };
-    }),
-
-  updateUserProfileImage: publicProcedure
-    .input(
-      z.object({
-        accessToken: z.string(),
-        image: z.string(),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      /**
-       * Get the user from the database to check if they already have a image uploaded
-       */
-      const user = await Prisma.getUserBySecret(input.accessToken);
-      if (!user) {
-        throw new Error("Invalid user");
-      }
-
       /**
        * Upload the image to the blob storage
        *
@@ -86,10 +62,10 @@ export const userRouter = {
        *
        * in the uploadFile function we also check if the image is less than 5mb.
        */
-      let imageUrl = input.image;
+      let imageUrl = input.user.image;
 
       if (imageUrl && imageUrl !== config.default.image) {
-        const blob = await uploadFile(user.image, input.image);
+        const blob = await uploadFile(user.image, imageUrl);
 
         if (!blob) {
           throw new Error("Error uploading image");
@@ -100,10 +76,11 @@ export const userRouter = {
         imageUrl = config.default.image;
       }
 
-      /**
-       * Update the user with the new image url
-       */
-      const updatedUser = await Prisma.updateUserById(user.id, {
+      // Update the user
+      const updatedUser = await Prisma.updateUserById(input.user.id, {
+        name: input.user.name,
+        permissions: input.user.permissions,
+        roles: input.user.roles,
         image: imageUrl,
       } as User);
 

@@ -13,8 +13,11 @@ import { Spinner } from "@nextui-org/spinner";
 import { Button } from "@nextui-org/button";
 import { hasPermissions } from "@/lib/utils";
 import { Permission } from "@/types/global/permission";
-import UpdateNameField from "@/components/ui/UpdateNameField";
-import UpdateImageField from "@/components/ui/UpdateImageField";
+import { type FormEvent, useState } from "react";
+import { Input } from "@nextui-org/react";
+import config from "@/lib/config/user.config";
+import { type Status } from "@/types/global/status";
+import { trpc } from "@/lib/trpc/client";
 
 /**
  * Wraps the main components in a session provider for next auth.
@@ -45,6 +48,11 @@ export default function AccountPage() {
 function Components(): JSX.Element {
   const { data: session, status } = useSession();
 
+  const { mutateAsync: updateUser } = trpc.updateUser.useMutation();
+
+  const [user, setUser] = useState(session?.user);
+  const [updateStatus, setUpdateStatus] = useState<Status>("idle");
+
   /**
    * If the user is currently being authenticated, display a loading spinner.
    */
@@ -61,7 +69,7 @@ function Components(): JSX.Element {
    *
    * The error message includes a button for the user to properly sign in.
    */
-  if (status === "unauthenticated" || !session) {
+  if (status === "unauthenticated" || !session || !user) {
     return (
       <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center p-12">
         <h1 className="text-center text-3xl font-bold text-white lg:text-5xl">
@@ -84,6 +92,20 @@ function Components(): JSX.Element {
       </MainWrapper>
     );
   }
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setUpdateStatus("loading");
+
+    await updateUser({ accessToken: session.user.secret, user })
+      .then((res) => {
+        res.user ? setUpdateStatus("success") : setUpdateStatus("error");
+      })
+      .catch(() => {
+        setUpdateStatus("error");
+      });
+  };
 
   return (
     <MainWrapper className="relative z-40 flex min-h-screen w-screen flex-col items-center justify-center px-12 pb-20 pt-36 lg:px-20 lg:pt-40">
@@ -136,10 +158,75 @@ function Components(): JSX.Element {
          * The settings section allows the user to change their settings.
          * Anyone can access this section.
          */}
-        <div className="flex w-full flex-col items-start justify-start gap-2">
-          <UpdateNameField user={session.user} />
-          <UpdateImageField user={session.user} />
-        </div>
+        <form
+          className="flex w-full flex-col items-start justify-start gap-2"
+          onSubmit={onSubmit}
+        >
+          <Input
+            className="w-full disabled:opacity-50"
+            disabled={updateStatus === "loading"}
+            maxLength={config.max.name}
+            minLength={config.min.name}
+            type="text"
+            label="Name"
+            placeholder="Name"
+            value={user.name}
+            onChange={(e) => setUser({ ...user, name: e.target.value })}
+          />
+
+          <Input
+            className="w-full disabled:opacity-50"
+            type="file"
+            disabled={updateStatus === "loading"}
+            label="Profile Image"
+            placeholder="Profile Image"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) {
+                return setUser({ ...user, image: config.default.image });
+              }
+
+              // make sure file is less than 5mb
+              if (file.size > 5 * 1024 * 1024) {
+                alert("Image size must be less than 5mb");
+                return setUpdateStatus("error");
+              }
+
+              const reader = new FileReader();
+
+              reader.onloadend = () => {
+                const image = reader.result as string;
+
+                setUser({ ...user, image });
+              };
+
+              reader.readAsDataURL(file);
+            }}
+          />
+
+          <Button
+            type="submit"
+            className="w-fit disabled:opacity-50"
+            disabled={updateStatus === "loading"}
+            color="default"
+          >
+            {updateStatus === "loading" ? (
+              <Spinner color="white" size="sm" />
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+
+          {updateStatus === "success" && (
+            <p className="text-sm text-green-500">
+              Image updated successfully!
+            </p>
+          )}
+
+          {updateStatus === "error" && (
+            <p className="text-sm text-red-500">Failed to update image</p>
+          )}
+        </form>
 
         {/**
          * ADMIN CONSOLE
