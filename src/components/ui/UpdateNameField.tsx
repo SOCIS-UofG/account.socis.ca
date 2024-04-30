@@ -18,6 +18,8 @@ export default function UpdateNameField(props: { user: User }) {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    setStatus("loading");
+
     await updateUser({
       accessToken: props.user.secret,
       user: {
