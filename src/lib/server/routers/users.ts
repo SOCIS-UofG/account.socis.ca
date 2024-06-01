@@ -6,7 +6,6 @@ import uploadFile from "./utils/uploadFile";
 import { Permission } from "@/types/global/permission";
 import { del } from "@vercel/blob";
 import config from "@/lib/config/user.config";
-import { type PrismaClient } from "@prisma/client";
 import { type User } from "next-auth";
 
 /**
@@ -82,7 +81,7 @@ export const userRouter = {
        */
       let updatedUser: User | undefined;
 
-      await prisma.$transaction(async (prisma: PrismaClient) => {
+      await prisma.$transaction(async (prisma: any) => {
         let imageUrl = input.user.image;
 
         if (imageUrl && imageUrl !== config.default.image) {
@@ -157,7 +156,7 @@ export const userRouter = {
         throw new Error("Invalid permissions");
       }
 
-      prisma.$transaction(async (prisma: PrismaClient) => {
+      prisma.$transaction(async (prisma: any) => {
         const deletedUser = await prisma.user.delete({
           where: {
             id: input.id,
