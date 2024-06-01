@@ -1,19 +1,33 @@
-import { Prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
 import { hasPermissions } from "@/lib/utils";
-import { type User } from "next-auth";
 import uploadFile from "./utils/uploadFile";
 import { Permission } from "@/types/global/permission";
 import { del } from "@vercel/blob";
 import config from "@/lib/config/user.config";
+import { type PrismaClient } from "@prisma/client";
+import { type User } from "next-auth";
 
 /**
  * User router
  */
 export const userRouter = {
   getAllUsersSecure: publicProcedure.mutation(async () => {
-    const users = await Prisma.getAllUsersSecure();
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        permissions: true,
+        roles: true,
+
+        // ignore password
+        password: false,
+        secret: false,
+      },
+    });
 
     return { users };
   }),
@@ -38,7 +52,11 @@ export const userRouter = {
       }),
     )
     .mutation(async ({ input }) => {
-      const user = await Prisma.getUserBySecret(input.accessToken);
+      const user = await prisma.user.findFirst({
+        where: {
+          secret: input.accessToken,
+        },
+      });
       if (!user) {
         throw new Error("Invalid user");
       }
@@ -62,33 +80,58 @@ export const userRouter = {
        *
        * in the uploadFile function we also check if the image is less than 5mb.
        */
-      let imageUrl = input.user.image;
+      let updatedUser: User | undefined;
 
-      if (imageUrl && imageUrl !== config.default.image) {
-        const blob = await uploadFile(user.image, imageUrl);
+      await prisma.$transaction(async (prisma: PrismaClient) => {
+        let imageUrl = input.user.image;
 
-        if (!blob) {
-          throw new Error("Error uploading image");
+        if (imageUrl && imageUrl !== config.default.image) {
+          const blob = await uploadFile(user.image, imageUrl);
+
+          if (!blob) {
+            throw new Error("Error uploading image");
+          }
+
+          imageUrl = blob.url;
+        } else {
+          imageUrl = config.default.image;
         }
 
-        imageUrl = blob.url;
-      } else {
-        imageUrl = config.default.image;
-      }
+        // Update the user
+        updatedUser = await prisma.user.update({
+          where: {
+            id: input.user.id,
+          },
+          data: {
+            name: input.user.name,
+            permissions: {
+              set: input.user.permissions,
+            },
+            roles: {
+              set: input.user.roles,
+            },
+            image: imageUrl,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            permissions: true,
+            roles: true,
 
-      // Update the user
-      const updatedUser = await Prisma.updateUserById(input.user.id, {
-        name: input.user.name,
-        permissions: input.user.permissions,
-        roles: input.user.roles,
-        image: imageUrl,
-      } as User);
+            // ignore password
+            password: false,
+            secret: false,
+          },
+        });
 
-      if (!updatedUser) {
-        throw new Error("Error updating user");
-      }
+        if (!updatedUser) {
+          throw new Error("Error updating user");
+        }
+      });
 
-      return { user: { ...updatedUser, password: undefined } };
+      return { user: updatedUser };
     }),
 
   deleteUser: publicProcedure
@@ -99,7 +142,12 @@ export const userRouter = {
       }),
     )
     .mutation(async ({ input }) => {
-      const user = await Prisma.getUserBySecret(input.accessToken);
+      const user = await prisma.user.findFirst({
+        where: {
+          secret: input.accessToken,
+        },
+      });
+
       if (!user) {
         throw new Error("Invalid user");
       }
@@ -109,18 +157,41 @@ export const userRouter = {
         throw new Error("Invalid permissions");
       }
 
-      const deletedUser = await Prisma.deleteUserById(input.id);
-      if (!deletedUser) {
-        throw new Error("Error deleting user");
-      }
+      prisma.$transaction(async (prisma: PrismaClient) => {
+        const deletedUser = await prisma.user.delete({
+          where: {
+            id: input.id,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            permissions: true,
+            roles: true,
 
-      // delete the user photo from the blob storage
-      try {
-        await del(deletedUser.image);
-      } catch (error) {
-        throw new Error("Error deleting user image");
-      }
+            // ignore password
+            password: false,
+            secret: false,
+          },
+        });
 
-      return { user: { ...deletedUser, password: undefined } };
+        if (!deletedUser) {
+          throw new Error("Error deleting user");
+        }
+
+        // delete the user photo from the blob storage
+        try {
+          await del(deletedUser.image);
+        } catch (error) {
+          throw new Error("Error deleting user image");
+        }
+      });
+
+      return {
+        user: {
+          id: input.id,
+        },
+      };
     }),
 };

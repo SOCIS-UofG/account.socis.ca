@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
-import { Prisma } from "./prisma";
+import { prisma } from "./prisma";
 
 const { hostname } = new URL(
-  process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+  process.env.NEXTAUTH_URL ?? "http://localhost:3000",
 );
 const ROOT_DOMAIN = hostname
   .split(".")
@@ -35,7 +35,12 @@ export const handler = NextAuth({
 
   callbacks: {
     async session({ session }) {
-      const user = await Prisma.getUserByEmailNoPassword(session.user.email);
+      const user = await prisma.user.findFirst({
+        where: {
+          email: session.user.email,
+        },
+      });
+
       if (!user) {
         throw new Error("Failed to fetch user");
       }
