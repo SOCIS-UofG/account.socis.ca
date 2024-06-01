@@ -59,7 +59,7 @@ function Components(): JSX.Element {
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<Omit<User, "secret">[]>([]);
   const [search, setSearch] = useState<string>("");
   const [status, setStatus] = useState<Status>("idle");
 
